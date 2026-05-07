@@ -526,7 +526,6 @@ README.md         # This file
 ## Author
 
 **Nikolaos Karanikolas**  
-IT Administrator · Developer  
 [karanik.gr](https://karanik.gr) · [github.com/karanikn](https://github.com/karanikn)
 
 ---
