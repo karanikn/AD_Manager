@@ -296,6 +296,13 @@ function Export-ToCSV {
       <Setter Property="FontSize" Value="11"/><Setter Property="Foreground" Value="#555"/>
       <Setter Property="Margin" Value="0,2"/>
     </Style>
+    <Style x:Key="StatTBox" TargetType="TextBox">
+      <Setter Property="TextWrapping" Value="Wrap"/>
+      <Setter Property="FontSize" Value="11"/><Setter Property="Foreground" Value="#555"/>
+      <Setter Property="Margin" Value="0,2"/><Setter Property="IsReadOnly" Value="True"/>
+      <Setter Property="BorderThickness" Value="0"/><Setter Property="Background" Value="Transparent"/>
+      <Setter Property="Padding" Value="0"/><Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
     <Style x:Key="ADGrid" TargetType="DataGrid">
       <Setter Property="AutoGenerateColumns" Value="True"/>
       <Setter Property="IsReadOnly" Value="True"/>
@@ -309,8 +316,11 @@ function Export-ToCSV {
       <Setter Property="BorderBrush" Value="#DDE1E7"/>
       <Setter Property="BorderThickness" Value="1"/>
       <Setter Property="ColumnHeaderHeight" Value="30"/>
-      <Setter Property="CanUserSortColumns" Value="True"/>
+      <Setter Property="CanUserSortColumns"   Value="True"/>
+      <Setter Property="CanUserResizeColumns" Value="True"/>
+      <Setter Property="CanUserReorderColumns" Value="True"/>
     </Style>
+
     <Style x:Key="FBox" TargetType="TextBox">
       <Setter Property="Height" Value="28"/><Setter Property="Padding" Value="8,0"/>
       <Setter Property="FontSize" Value="12"/>
@@ -461,56 +471,126 @@ function Export-ToCSV {
       </TabControl.Resources>
 
       <!-- TAB 1: SYSTEM -->
-      <TabItem Header="System"  ToolTip="OS, RAM, Disk, CPU info for this machine">
-        <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="4">
-          <StackPanel Margin="4">
-            <Border Style="{StaticResource Card}">
-              <StackPanel>
-                <TextBlock Text="Operating System" Style="{StaticResource SectionHdr}"/>
-                <UniformGrid Columns="2" Rows="4">
-                  <TextBlock x:Name="lblOS"          Style="{StaticResource StatLbl}" Text="OS: ..."/>
-                  <TextBlock x:Name="lblOSBuild"     Style="{StaticResource StatLbl}" Text="Build: ..."/>
-                  <TextBlock x:Name="lblOSArch"      Style="{StaticResource StatLbl}" Text="Architecture: ..."/>
-                  <TextBlock x:Name="lblInstallDate" Style="{StaticResource StatLbl}" Text="Install date: ..."/>
-                  <TextBlock x:Name="lblHostname"    Style="{StaticResource StatLbl}" Text="Hostname: ..."/>
-                  <TextBlock x:Name="lblLastBoot"    Style="{StaticResource StatLbl}" Text="Last boot: ..."/>
-                  <TextBlock x:Name="lblTimeZone"    Style="{StaticResource StatLbl}" Text="Time zone: ..."/>
-                  <TextBlock x:Name="lblUptime"      Style="{StaticResource StatLbl}" Text="Uptime: ..."/>
-                </UniformGrid>
-              </StackPanel>
-            </Border>
-            <Border Style="{StaticResource Card}">
-              <StackPanel>
-                <TextBlock Text="Memory (RAM)" Style="{StaticResource SectionHdr}"/>
-                <UniformGrid Columns="2" Rows="2">
-                  <TextBlock x:Name="lblRamTotal" Style="{StaticResource StatLbl}" Text="Total: ..."/>
-                  <TextBlock x:Name="lblRamAvail" Style="{StaticResource StatLbl}" Text="Available: ..."/>
-                  <TextBlock x:Name="lblRamUsed"  Style="{StaticResource StatLbl}" Text="Used: ..."/>
-                  <TextBlock x:Name="lblRamPct"   Style="{StaticResource StatLbl}" Text="Usage %: ..."/>
-                </UniformGrid>
-                <ProgressBar x:Name="pbRam" Height="10" Minimum="0" Maximum="100" Value="0" Margin="0,6,0,0" Foreground="#1E6EB5"/>
-              </StackPanel>
-            </Border>
-            <Border Style="{StaticResource Card}">
-              <StackPanel>
-                <TextBlock Text="Disk Drives" Style="{StaticResource SectionHdr}"/>
-                <DataGrid x:Name="gridDisk" Style="{StaticResource ADGrid}" MaxHeight="160"/>
-              </StackPanel>
-            </Border>
-            <Border Style="{StaticResource Card}">
-              <StackPanel>
-                <TextBlock Text="Processor" Style="{StaticResource SectionHdr}"/>
-                <UniformGrid Columns="2" Rows="2">
-                  <TextBlock x:Name="lblCpu"      Style="{StaticResource StatLbl}" Text="CPU: ..."/>
-                  <TextBlock x:Name="lblCpuCores" Style="{StaticResource StatLbl}" Text="Cores: ..."/>
-                  <TextBlock x:Name="lblCpuSpeed" Style="{StaticResource StatLbl}" Text="Max Speed: ..."/>
-                  <TextBlock x:Name="lblCpuLoad"  Style="{StaticResource StatLbl}" Text="Load: ..."/>
-                </UniformGrid>
-              </StackPanel>
-            </Border>
-            <Button x:Name="btnRefreshSystem" Content="Refresh System Info" Style="{StaticResource SecBtn}" Width="180" HorizontalAlignment="Left"/>
-          </StackPanel>
-        </ScrollViewer>
+      <TabItem Header="System"  ToolTip="OS, RAM, Disk, CPU, BIOS, Network info for this machine">
+        <Grid Margin="4">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+          </Grid.RowDefinitions>
+          <Button Grid.Row="0" x:Name="btnRefreshSystem" Content="Refresh System Info" Style="{StaticResource SecBtn}" Width="180" HorizontalAlignment="Left" Margin="0,0,0,4"/>
+          <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,4,0">
+            <StackPanel Margin="0,0,4,0">
+              <!-- OS -->
+              <Border Style="{StaticResource Card}">
+                <StackPanel>
+                  <TextBlock Text="Operating System" Style="{StaticResource SectionHdr}"/>
+                  <UniformGrid Columns="2">
+                    <TextBox x:Name="lblOS"          Style="{StaticResource StatTBox}" Text="OS: ..."          IsReadOnly="True" BorderThickness="0" Background="Transparent"/>
+                    <TextBox x:Name="lblOSBuild"     Style="{StaticResource StatTBox}" Text="Build: ..."       IsReadOnly="True" BorderThickness="0" Background="Transparent"/>
+                    <TextBox x:Name="lblOSArch"      Style="{StaticResource StatTBox}" Text="Architecture: ..." IsReadOnly="True" BorderThickness="0" Background="Transparent"/>
+                    <TextBox x:Name="lblInstallDate" Style="{StaticResource StatTBox}" Text="Install date: ..." IsReadOnly="True" BorderThickness="0" Background="Transparent"/>
+                    <TextBox x:Name="lblHostname"    Style="{StaticResource StatTBox}" Text="Hostname: ..."    IsReadOnly="True" BorderThickness="0" Background="Transparent"/>
+                    <TextBox x:Name="lblLastBoot"    Style="{StaticResource StatTBox}" Text="Last boot: ..."   IsReadOnly="True" BorderThickness="0" Background="Transparent"/>
+                    <TextBox x:Name="lblTimeZone"    Style="{StaticResource StatTBox}" Text="Time zone: ..."   IsReadOnly="True" BorderThickness="0" Background="Transparent"/>
+                    <TextBox x:Name="lblUptime"      Style="{StaticResource StatTBox}" Text="Uptime: ..."      IsReadOnly="True" BorderThickness="0" Background="Transparent"/>
+                    <TextBox x:Name="lblRegUser"     Style="{StaticResource StatTBox}" Text="Registered: ..."  IsReadOnly="True" BorderThickness="0" Background="Transparent"/>
+                    <TextBox x:Name="lblDomain2"     Style="{StaticResource StatTBox}" Text="Domain: ..."      IsReadOnly="True" BorderThickness="0" Background="Transparent"/>
+                  </UniformGrid>
+                </StackPanel>
+              </Border>
+              <!-- Computer / Manufacturer -->
+              <Border Style="{StaticResource Card}">
+                <StackPanel>
+                  <TextBlock Text="Computer / Manufacturer" Style="{StaticResource SectionHdr}"/>
+                  <UniformGrid Columns="2">
+                    <TextBox x:Name="lblMfg"         Style="{StaticResource StatTBox}" Text="Manufacturer: ..." IsReadOnly="True" BorderThickness="0" Background="Transparent"/>
+                    <TextBox x:Name="lblModel"        Style="{StaticResource StatTBox}" Text="Model: ..."       IsReadOnly="True" BorderThickness="0" Background="Transparent"/>
+                    <TextBox x:Name="lblSerial"       Style="{StaticResource StatTBox}" Text="Serial: ..."      IsReadOnly="True" BorderThickness="0" Background="Transparent"/>
+                    <TextBox x:Name="lblSystemType"   Style="{StaticResource StatTBox}" Text="Type: ..."        IsReadOnly="True" BorderThickness="0" Background="Transparent"/>
+                  </UniformGrid>
+                </StackPanel>
+              </Border>
+              <!-- BIOS -->
+              <Border Style="{StaticResource Card}">
+                <StackPanel>
+                  <TextBlock Text="BIOS" Style="{StaticResource SectionHdr}"/>
+                  <UniformGrid Columns="2">
+                    <TextBox x:Name="lblBiosMfg"     Style="{StaticResource StatTBox}" Text="BIOS Mfg: ..."    IsReadOnly="True" BorderThickness="0" Background="Transparent"/>
+                    <TextBox x:Name="lblBiosVer"      Style="{StaticResource StatTBox}" Text="BIOS Ver: ..."    IsReadOnly="True" BorderThickness="0" Background="Transparent"/>
+                    <TextBox x:Name="lblBiosSN"       Style="{StaticResource StatTBox}" Text="BIOS SN: ..."     IsReadOnly="True" BorderThickness="0" Background="Transparent"/>
+                    <TextBox x:Name="lblBiosDate"     Style="{StaticResource StatTBox}" Text="BIOS Date: ..."   IsReadOnly="True" BorderThickness="0" Background="Transparent"/>
+                  </UniformGrid>
+                </StackPanel>
+              </Border>
+              <!-- CPU -->
+              <Border Style="{StaticResource Card}">
+                <StackPanel>
+                  <TextBlock Text="Processor" Style="{StaticResource SectionHdr}"/>
+                  <UniformGrid Columns="2">
+                    <TextBox x:Name="lblCpu"          Style="{StaticResource StatTBox}" Text="CPU: ..."         IsReadOnly="True" BorderThickness="0" Background="Transparent"/>
+                    <TextBox x:Name="lblCpuCores"     Style="{StaticResource StatTBox}" Text="Cores: ..."       IsReadOnly="True" BorderThickness="0" Background="Transparent"/>
+                    <TextBox x:Name="lblCpuSpeed"     Style="{StaticResource StatTBox}" Text="Max Speed: ..."   IsReadOnly="True" BorderThickness="0" Background="Transparent"/>
+                    <TextBox x:Name="lblCpuLoad"      Style="{StaticResource StatTBox}" Text="Load: ..."        IsReadOnly="True" BorderThickness="0" Background="Transparent"/>
+                  </UniformGrid>
+                </StackPanel>
+              </Border>
+              <!-- RAM -->
+              <Border Style="{StaticResource Card}">
+                <StackPanel>
+                  <TextBlock Text="Memory (RAM)" Style="{StaticResource SectionHdr}"/>
+                  <UniformGrid Columns="2">
+                    <TextBox x:Name="lblRamTotal"     Style="{StaticResource StatTBox}" Text="Total: ..."       IsReadOnly="True" BorderThickness="0" Background="Transparent"/>
+                    <TextBox x:Name="lblRamAvail"     Style="{StaticResource StatTBox}" Text="Available: ..."   IsReadOnly="True" BorderThickness="0" Background="Transparent"/>
+                    <TextBox x:Name="lblRamUsed"      Style="{StaticResource StatTBox}" Text="Used: ..."        IsReadOnly="True" BorderThickness="0" Background="Transparent"/>
+                    <TextBox x:Name="lblRamPct"       Style="{StaticResource StatTBox}" Text="Usage: ..."       IsReadOnly="True" BorderThickness="0" Background="Transparent"/>
+                  </UniformGrid>
+                  <ProgressBar x:Name="pbRam" Height="10" Minimum="0" Maximum="100" Value="0" Margin="0,6,0,0" Foreground="#1E6EB5"/>
+                  <DataGrid x:Name="gridRamSticks" Style="{StaticResource ADGrid}" MaxHeight="120" Margin="0,6,0,0"/>
+                </StackPanel>
+              </Border>
+              <!-- Disks -->
+              <Border Style="{StaticResource Card}">
+                <StackPanel>
+                  <TextBlock Text="Disk Drives" Style="{StaticResource SectionHdr}"/>
+                  <DataGrid x:Name="gridDisk"      Style="{StaticResource ADGrid}" MaxHeight="160"/>
+                  <DataGrid x:Name="gridPhysDisk"  Style="{StaticResource ADGrid}" MaxHeight="120" Margin="0,4,0,0"/>
+                </StackPanel>
+              </Border>
+              <!-- Network -->
+              <Border Style="{StaticResource Card}">
+                <StackPanel>
+                  <TextBlock Text="Network Adapters" Style="{StaticResource SectionHdr}"/>
+                  <DataGrid x:Name="gridNetAdapters" Style="{StaticResource ADGrid}" MaxHeight="160"/>
+                </StackPanel>
+              </Border>
+              <!-- Services -->
+              <Border Style="{StaticResource Card}">
+                <StackPanel>
+                  <DockPanel Margin="0,0,0,4">
+                    <TextBlock Text="Services" Style="{StaticResource SectionHdr}" DockPanel.Dock="Left" VerticalAlignment="Center"/>
+                    <TextBox x:Name="txtSvcFilter" Style="{StaticResource FBox}" Width="160" Height="24" DockPanel.Dock="Right" HorizontalAlignment="Right" ToolTip="Filter services"/>
+                  </DockPanel>
+                  <DataGrid x:Name="gridServices" Style="{StaticResource ADGrid}" MaxHeight="200"/>
+                </StackPanel>
+              </Border>
+              <!-- Startup -->
+              <Border Style="{StaticResource Card}">
+                <StackPanel>
+                  <TextBlock Text="Startup Applications" Style="{StaticResource SectionHdr}"/>
+                  <DataGrid x:Name="gridStartup" Style="{StaticResource ADGrid}" MaxHeight="140"/>
+                </StackPanel>
+              </Border>
+              <!-- Running Processes -->
+              <Border Style="{StaticResource Card}">
+                <StackPanel>
+                  <TextBlock Text="Top Processes (by CPU)" Style="{StaticResource SectionHdr}"/>
+                  <DataGrid x:Name="gridProcs" Style="{StaticResource ADGrid}" MaxHeight="160"/>
+                </StackPanel>
+              </Border>
+
+            </StackPanel>
+          </ScrollViewer>
+        </Grid>
       </TabItem>
 
       <!-- TAB 2: DOMAIN -->
@@ -521,16 +601,16 @@ function Export-ToCSV {
               <StackPanel>
                 <TextBlock Text="Domain" Style="{StaticResource SectionHdr}"/>
                 <UniformGrid Columns="2" Rows="5">
-                  <TextBlock x:Name="lblDomainName"    Style="{StaticResource StatLbl}" Text="Name: ..."/>
-                  <TextBlock x:Name="lblDomainDNS"     Style="{StaticResource StatLbl}" Text="DNS Root: ..."/>
-                  <TextBlock x:Name="lblDomainNetbios" Style="{StaticResource StatLbl}" Text="NetBIOS: ..."/>
-                  <TextBlock x:Name="lblDomainMode"    Style="{StaticResource StatLbl}" Text="Functional level: ..."/>
-                  <TextBlock x:Name="lblForestName"    Style="{StaticResource StatLbl}" Text="Forest: ..."/>
-                  <TextBlock x:Name="lblForestMode"    Style="{StaticResource StatLbl}" Text="Forest level: ..."/>
-                  <TextBlock x:Name="lblDomainSID"     Style="{StaticResource StatLbl}" Text="Domain SID: ..."/>
-                  <TextBlock x:Name="lblSites"         Style="{StaticResource StatLbl}" Text="Sites: ..."/>
-                  <TextBlock x:Name="lblUsersCount"    Style="{StaticResource StatLbl}" Text="Users: ..."/>
-                  <TextBlock x:Name="lblGroupsCount"   Style="{StaticResource StatLbl}" Text="Groups: ..."/>
+                  <TextBox x:Name="lblDomainName"    Style="{StaticResource StatTBox}" Text="Name: ..." IsReadOnly="True" BorderThickness="0" Background="Transparent"/>
+                  <TextBox x:Name="lblDomainDNS"     Style="{StaticResource StatTBox}" Text="DNS Root: ..." IsReadOnly="True" BorderThickness="0" Background="Transparent"/>
+                  <TextBox x:Name="lblDomainNetbios" Style="{StaticResource StatTBox}" Text="NetBIOS: ..." IsReadOnly="True" BorderThickness="0" Background="Transparent"/>
+                  <TextBox x:Name="lblDomainMode"    Style="{StaticResource StatTBox}" Text="Functional level: ..." IsReadOnly="True" BorderThickness="0" Background="Transparent"/>
+                  <TextBox x:Name="lblForestName"    Style="{StaticResource StatTBox}" Text="Forest: ..." IsReadOnly="True" BorderThickness="0" Background="Transparent"/>
+                  <TextBox x:Name="lblForestMode"    Style="{StaticResource StatTBox}" Text="Forest level: ..." IsReadOnly="True" BorderThickness="0" Background="Transparent"/>
+                  <TextBox x:Name="lblDomainSID"     Style="{StaticResource StatTBox}" Text="Domain SID: ..." IsReadOnly="True" BorderThickness="0" Background="Transparent"/>
+                  <TextBox x:Name="lblSites"         Style="{StaticResource StatTBox}" Text="Sites: ..." IsReadOnly="True" BorderThickness="0" Background="Transparent"/>
+                  <TextBox x:Name="lblUsersCount"    Style="{StaticResource StatTBox}" Text="Users: ..." IsReadOnly="True" BorderThickness="0" Background="Transparent"/>
+                  <TextBox x:Name="lblGroupsCount"   Style="{StaticResource StatTBox}" Text="Groups: ..." IsReadOnly="True" BorderThickness="0" Background="Transparent"/>
                 </UniformGrid>
               </StackPanel>
             </Border>
@@ -538,11 +618,11 @@ function Export-ToCSV {
               <StackPanel>
                 <TextBlock Text="FSMO Role Holders" Style="{StaticResource SectionHdr}"/>
                 <UniformGrid Columns="2" Rows="5">
-                  <TextBlock Style="{StaticResource StatLbl}" Text="PDC Emulator:"/>        <TextBlock x:Name="lblPDC"    Style="{StaticResource StatLbl}" Text="..."/>
-                  <TextBlock Style="{StaticResource StatLbl}" Text="RID Master:"/>           <TextBlock x:Name="lblRID"    Style="{StaticResource StatLbl}" Text="..."/>
-                  <TextBlock Style="{StaticResource StatLbl}" Text="Infrastructure Master:"/><TextBlock x:Name="lblInfra"  Style="{StaticResource StatLbl}" Text="..."/>
-                  <TextBlock Style="{StaticResource StatLbl}" Text="Schema Master:"/>        <TextBlock x:Name="lblSchema" Style="{StaticResource StatLbl}" Text="..."/>
-                  <TextBlock Style="{StaticResource StatLbl}" Text="Domain Naming Master:"/> <TextBlock x:Name="lblDNM"    Style="{StaticResource StatLbl}" Text="..."/>
+                  <TextBlock Style="{StaticResource StatLbl}" Text="PDC Emulator:"/>        <TextBox x:Name="lblPDC" IsReadOnly="True" BorderThickness="0" Background="Transparent"    Style="{StaticResource StatTBox}" Text="..."/>
+                  <TextBlock Style="{StaticResource StatLbl}" Text="RID Master:"/>           <TextBox x:Name="lblRID" IsReadOnly="True" BorderThickness="0" Background="Transparent"    Style="{StaticResource StatTBox}" Text="..."/>
+                  <TextBlock Style="{StaticResource StatLbl}" Text="Infrastructure Master:"/><TextBox x:Name="lblInfra" IsReadOnly="True" BorderThickness="0" Background="Transparent"  Style="{StaticResource StatTBox}" Text="..."/>
+                  <TextBlock Style="{StaticResource StatLbl}" Text="Schema Master:"/>        <TextBox x:Name="lblSchema" IsReadOnly="True" BorderThickness="0" Background="Transparent" Style="{StaticResource StatTBox}" Text="..."/>
+                  <TextBlock Style="{StaticResource StatLbl}" Text="Domain Naming Master:"/> <TextBox x:Name="lblDNM" IsReadOnly="True" BorderThickness="0" Background="Transparent"    Style="{StaticResource StatTBox}" Text="..."/>
                 </UniformGrid>
               </StackPanel>
             </Border>
@@ -614,9 +694,11 @@ function Export-ToCSV {
         <Grid Margin="4">
           <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="200"/>
+            <RowDefinition Height="160" MinHeight="60"/>
+            <RowDefinition Height="4"/>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
+            <RowDefinition Height="4"/>
+            <RowDefinition Height="*" MinHeight="60"/>
             <RowDefinition Height="Auto"/>
           </Grid.RowDefinitions>
           <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,6">
@@ -627,7 +709,8 @@ function Export-ToCSV {
           <Border Grid.Row="1" Style="{StaticResource Card}" Padding="4">
             <DataGrid x:Name="gridShares" Style="{StaticResource ADGrid}"/>
           </Border>
-          <Border Grid.Row="2" Style="{StaticResource Card}">
+          <GridSplitter Grid.Row="2" Height="4" HorizontalAlignment="Stretch" VerticalAlignment="Center" Background="#CCD3DC" ShowsPreview="True" ResizeBehavior="PreviousAndNext"/>
+          <Border Grid.Row="3" Style="{StaticResource Card}">
             <StackPanel>
               <TextBlock Text="Check User / Group Permissions on Shares" Style="{StaticResource SectionHdr}"/>
               <TextBlock Text="Scan a specific folder tree (instead of all shares)" FontSize="11" Foreground="#777" Margin="0,0,0,4"/>
@@ -655,10 +738,11 @@ function Export-ToCSV {
               </StackPanel>
             </StackPanel>
           </Border>
-          <Border Grid.Row="3" Style="{StaticResource Card}" Padding="4">
+          <GridSplitter Grid.Row="4" Height="4" HorizontalAlignment="Stretch" VerticalAlignment="Center" Background="#CCD3DC" ShowsPreview="True" ResizeBehavior="PreviousAndNext"/>
+          <Border Grid.Row="5" Style="{StaticResource Card}" Padding="4">
             <DataGrid x:Name="gridPerms" Style="{StaticResource ADGrid}"/>
           </Border>
-          <Button Grid.Row="4" x:Name="btnExportPermsResult" Content="Export Checked Permissions CSV"
+          <Button Grid.Row="6" x:Name="btnExportPermsResult" Content="Export Checked Permissions CSV"
                   Style="{StaticResource GreenBtn}" HorizontalAlignment="Left" Width="260" Margin="0,4,0,0"/>
         </Grid>
       </TabItem>
@@ -670,7 +754,8 @@ function Export-ToCSV {
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
+            <RowDefinition Height="4"/>
+            <RowDefinition Height="*" MinHeight="80"/>
             <RowDefinition Height="Auto"/>
           </Grid.RowDefinitions>
           <!-- Row 0: Toolbar -->
@@ -683,6 +768,7 @@ function Export-ToCSV {
             <Button x:Name="btnResetPassword"    Content="Reset Pwd"    Style="{StaticResource OrangeBtn}" Margin="0,0,4,0"  ToolTip="Reset password for selected user"/>
             <Button x:Name="btnUnlockAccount"    Content="Unlock"       Style="{StaticResource GreenBtn}"  Margin="0,0,6,0"  ToolTip="Unlock selected locked-out account"/>
             <Button x:Name="btnMemberOf"         Content="Member-Of"    Style="{StaticResource SecBtn}"    Margin="0,0,6,0"  ToolTip="Show groups of selected user"/>
+            <Button x:Name="btnUserAudit"        Content="Auth Audit"   Style="{StaticResource SecBtn}"    Margin="0,0,6,0"  ToolTip="Show authentication events for selected user from all DCs (logons, Kerberos, NTLM, lockouts)"/>
             <Button x:Name="btnShowHeatmap"      Content="Heatmap"      Style="{StaticResource SecBtn}"    Margin="0,0,10,0" ToolTip="Last logon activity heatmap"/>
             <TextBox x:Name="txtUserLiveFilter"  Style="{StaticResource FBox}" Width="160" Margin="0,0,4,0" ToolTip="Live filter - type to filter results instantly"/>
             <TextBlock Text="Filter" VerticalAlignment="Center" FontSize="11" Foreground="#555" Margin="0,0,8,0"/>
@@ -718,8 +804,10 @@ function Export-ToCSV {
               </Border>
             </StackPanel>
           </Border>
-          <!-- Row 3: Main grid -->
-          <Border Grid.Row="3" Style="{StaticResource Card}" Padding="4">
+          <!-- Splitter -->
+          <GridSplitter Grid.Row="3" Height="4" HorizontalAlignment="Stretch" VerticalAlignment="Center" Background="#CCD3DC" ShowsPreview="True" ResizeBehavior="PreviousAndNext"/>
+          <!-- Row 4: Main grid -->
+          <Border Grid.Row="4" Style="{StaticResource Card}" Padding="4">
             <DataGrid x:Name="gridUsers" Style="{StaticResource ADGrid}" SelectionMode="Extended" IsReadOnly="True">
               <DataGrid.ContextMenu>
                 <ContextMenu>
@@ -732,7 +820,7 @@ function Export-ToCSV {
             </DataGrid>
           </Border>
           <!-- Row 4: Row count -->
-          <TextBlock Grid.Row="4" x:Name="lblUsersRowCount" Text="" FontSize="11" Foreground="#777" Margin="2,2,0,0"/>
+          <TextBlock Grid.Row="5" x:Name="lblUsersRowCount" Text="" FontSize="11" Foreground="#777" Margin="2,2,0,0"/>
         </Grid>
       </TabItem>
 
@@ -755,8 +843,10 @@ function Export-ToCSV {
             <DataGrid x:Name="gridGroups" Style="{StaticResource ADGrid}">
               <DataGrid.ContextMenu>
                 <ContextMenu>
-                  <MenuItem x:Name="ctxCopyCellG"  Header="Copy cell value"/>
-                  <MenuItem x:Name="ctxCopyRowG"   Header="Copy row (tab-sep)"/>
+                  <MenuItem x:Name="ctxCopyCellG"    Header="Copy cell value"/>
+                  <MenuItem x:Name="ctxCopyRowG"     Header="Copy row (tab-sep)"/>
+                  <Separator/>
+                  <MenuItem x:Name="ctxGroupDetails" Header="Group Details / Members..."/>
                 </ContextMenu>
               </DataGrid.ContextMenu>
             </DataGrid>
@@ -809,6 +899,9 @@ function Export-ToCSV {
                 <ContextMenu>
                   <MenuItem x:Name="ctxCopyCellC"  Header="Copy cell value"/>
                   <MenuItem x:Name="ctxCopyRowC"   Header="Copy row (tab-sep)"/>
+                  <Separator/>
+                  <MenuItem x:Name="ctxCompPing" Header="Ping (continuous)..." ToolTip="Opens cmd with continuous ping to the selected computer"/>
+                  <MenuItem x:Name="ctxCompRDP"  Header="RDP connect..."      ToolTip="Opens Remote Desktop to the selected computer"/>
                 </ContextMenu>
               </DataGrid.ContextMenu>
             </DataGrid>
@@ -1041,8 +1134,9 @@ function Export-ToCSV {
         <Grid Margin="4">
           <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
+            <RowDefinition Height="200" MinHeight="100"/>
+            <RowDefinition Height="4"/>
+            <RowDefinition Height="*" MinHeight="80"/>
             <RowDefinition Height="Auto"/>
           </Grid.RowDefinitions>
           <Border Grid.Row="0" Style="{StaticResource Card}">
@@ -1059,8 +1153,30 @@ function Export-ToCSV {
                 <TextBox x:Name="txtNetRetries" Style="{StaticResource FBox}" Width="36" Text="0" Margin="0,0,10,0" ToolTip="Retry count on failure (0 = no retry)"/>
                 <TextBlock Text="Threads:" VerticalAlignment="Center" FontSize="11" Margin="0,0,4,0" ToolTip="Parallel threads - higher = faster scan"/>
                 <TextBox x:Name="txtNetThreads" Style="{StaticResource FBox}" Width="36" Text="20" Margin="0,0,16,0" ToolTip="Parallel scan threads (default 20, max 50)"/>
+                <TextBlock Text="Discovery:" VerticalAlignment="Center" FontSize="11" Margin="0,0,4,0" ToolTip="Method used to detect if a computer is reachable"/>
+                <ComboBox x:Name="cmbNetMethod" Width="180" Height="26" FontSize="11" Margin="0,0,12,0">
+                  <ComboBox.ToolTip>
+                    <ToolTip MaxWidth="400">
+                      <StackPanel>
+                        <TextBlock Text="Discovery Method" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                        <TextBlock TextWrapping="Wrap" Text="Ping (ICMP): Standard ICMP echo - may be blocked by Windows Firewall on workstations."/>
+                        <TextBlock TextWrapping="Wrap" Margin="0,4,0,0" Text="TCP 445 (SMB): Tries SMB port - usually open on domain-joined machines even when ICMP is blocked."/>
+                        <TextBlock TextWrapping="Wrap" Margin="0,4,0,0" Text="TCP 88 (Kerberos): Domain controllers and AD machines."/>
+                        <TextBlock TextWrapping="Wrap" Margin="0,4,0,0" Text="TCP 389 (LDAP): Domain controllers."/>
+                        <TextBlock TextWrapping="Wrap" Margin="0,4,0,0" Text="TCP 3389 (RDP): Workstations with Remote Desktop enabled."/>
+                        <TextBlock TextWrapping="Wrap" Margin="0,4,0,0" Foreground="#2E7D32" Text="Multi-port: Tries Ping then 445/88/389/3389 in sequence - finds most machines including those that block ICMP."/>
+                      </StackPanel>
+                    </ToolTip>
+                  </ComboBox.ToolTip>
+                  <ComboBoxItem Content="Ping (ICMP)"/>
+                  <ComboBoxItem Content="TCP 445 (SMB)"/>
+                  <ComboBoxItem Content="TCP 88 (Kerberos)"/>
+                  <ComboBoxItem Content="TCP 389 (LDAP)"/>
+                  <ComboBoxItem Content="TCP 3389 (RDP)"/>
+                  <ComboBoxItem Content="Multi-port (any)" IsSelected="True"/>
+                </ComboBox>
                 <CheckBox x:Name="chkNetOnlineOnly" Content="Online only" IsChecked="True" VerticalAlignment="Center" FontSize="11" Margin="0,0,14,0"
-                          ToolTip="Show only computers that respond to ping. Offline computers are skipped and not shown in results."/>
+                          ToolTip="Show only computers that respond. Offline computers are not shown in results."/>
                 <CheckBox x:Name="chkNetWMI" Content="WMI" VerticalAlignment="Center" FontSize="11" Margin="0,0,14,0">
                   <CheckBox.ToolTip>
                     <ToolTip MaxWidth="380">
@@ -1109,22 +1225,25 @@ function Export-ToCSV {
           </Border>
           <!-- Computer selection panel -->
           <Border Grid.Row="1" Style="{StaticResource Card}" Padding="6" x:Name="borderNetComputers" Visibility="Collapsed">
-            <StackPanel>
-              <DockPanel Margin="0,0,0,6">
+            <DockPanel>
+              <DockPanel DockPanel.Dock="Top" Margin="0,0,0,6">
                 <TextBlock x:Name="lblNetCompCount" Text="Computers loaded from AD:" FontSize="11" Foreground="#555" DockPanel.Dock="Left" VerticalAlignment="Center"/>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" DockPanel.Dock="Right">
                   <Button x:Name="btnNetSelectAll"  Content="Select All"  Style="{StaticResource SecBtn}" Margin="0,0,6,0" Height="24" FontSize="11"/>
                   <Button x:Name="btnNetSelectNone" Content="Clear"       Style="{StaticResource SecBtn}" Height="24" FontSize="11"/>
                 </StackPanel>
               </DockPanel>
-              <Border BorderBrush="#DDE1E7" BorderThickness="1" CornerRadius="4" MaxHeight="180">
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                  <ContentControl x:Name="lstNetComputers"/>
+              <Border BorderBrush="#DDE1E7" BorderThickness="1" CornerRadius="4">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" CanContentScroll="False">
+                  <StackPanel x:Name="lstNetComputers" HorizontalAlignment="Left"/>
                 </ScrollViewer>
               </Border>
-            </StackPanel>
+            </DockPanel>
           </Border>
-          <Border Grid.Row="2" Style="{StaticResource Card}" Padding="4">
+          <GridSplitter Grid.Row="2" Height="4" HorizontalAlignment="Stretch" VerticalAlignment="Center"
+                        Background="#CCD3DC" ShowsPreview="True" ResizeBehavior="PreviousAndNext"
+                        ToolTip="Drag to resize panels"/>
+          <Border Grid.Row="3" Style="{StaticResource Card}" Padding="4">
             <DataGrid x:Name="gridNetStatus" Style="{StaticResource ADGrid}" IsReadOnly="True">
               <DataGrid.ContextMenu>
                 <ContextMenu>
@@ -1137,7 +1256,7 @@ function Export-ToCSV {
               </DataGrid.ContextMenu>
             </DataGrid>
           </Border>
-          <TextBlock Grid.Row="3" x:Name="lblNetCount" Text="" FontSize="11" Foreground="#777" Margin="2,2,0,0"/>
+          <TextBlock Grid.Row="4" x:Name="lblNetCount" Text="" FontSize="11" Foreground="#777" Margin="2,2,0,0"/>
         </Grid>
       </TabItem>
 
@@ -1209,6 +1328,12 @@ $Global:chkAutoScroll = B "chkAutoScroll"
 # System tab
 $lblOS = B "lblOS"; $lblOSBuild = B "lblOSBuild"; $lblOSArch = B "lblOSArch"; $lblInstallDate = B "lblInstallDate"
 $lblHostname = B "lblHostname"; $lblLastBoot = B "lblLastBoot"; $lblTimeZone = B "lblTimeZone"; $lblUptime = B "lblUptime"
+$lblRegUser = B "lblRegUser"; $lblDomain2 = B "lblDomain2"
+$lblMfg = B "lblMfg"; $lblModel = B "lblModel"; $lblSerial = B "lblSerial"; $lblSystemType = B "lblSystemType"
+$lblBiosMfg = B "lblBiosMfg"; $lblBiosVer = B "lblBiosVer"; $lblBiosSN = B "lblBiosSN"; $lblBiosDate = B "lblBiosDate"
+$gridRamSticks = B "gridRamSticks"; $gridPhysDisk = B "gridPhysDisk"; $gridNetAdapters = B "gridNetAdapters"
+$gridServices = B "gridServices"; $gridStartup = B "gridStartup"; $gridProcs = B "gridProcs"
+$txtSvcFilter = B "txtSvcFilter"
 $lblRamTotal = B "lblRamTotal"; $lblRamAvail = B "lblRamAvail"; $lblRamUsed = B "lblRamUsed"; $lblRamPct = B "lblRamPct"
 $pbRam = B "pbRam"; $gridDisk = B "gridDisk"; $btnRefreshSystem = B "btnRefreshSystem"
 $lblCpu = B "lblCpu"; $lblCpuCores = B "lblCpuCores"; $lblCpuSpeed = B "lblCpuSpeed"; $lblCpuLoad = B "lblCpuLoad"
@@ -1240,6 +1365,7 @@ $Script:ScanCancelFlag = $false
 
 # Users tab
 $gridUsers = B "gridUsers"; $btnLoadUsers = B "btnLoadUsers"; $btnExportUsersBtn = B "btnExportUsersBtn"
+$btnUserAudit = B "btnUserAudit"
 $btnExportUsersXlsx = B "btnExportUsersXlsx"
 $txtUserFilter = B "txtUserFilter"; $txtUserLiveFilter = B "txtUserLiveFilter"; $chkDisabledUsers = B "chkDisabledUsers"
 $btnEnableSelected = B "btnEnableSelected"; $btnDisableSelected = B "btnDisableSelected"
@@ -1265,6 +1391,7 @@ $lblHeatmapInfo    = B "lblHeatmapInfo"
 $txtStaleDays      = B "txtStaleDays";      $btnLoadStale      = B "btnLoadStale"
 $btnNetScan = B "btnNetScan"; $btnNetStop = B "btnNetStop"; $btnNetExport = B "btnNetExport"
 $btnNetGetComputers = B "btnNetGetComputers"
+$cmbNetMethod = B "cmbNetMethod"
 $btnNetSelectAll = B "btnNetSelectAll"; $btnNetSelectNone = B "btnNetSelectNone"
 $borderNetComputers = B "borderNetComputers"; $lstNetComputers = B "lstNetComputers"
 $lblNetCompCount = B "lblNetCompCount"
@@ -1293,6 +1420,7 @@ $panelMemberOf = B "panelMemberOf"; $lblMemberOfTitle = B "lblMemberOfTitle"
 
 # Groups tab
 $gridGroups = B "gridGroups"; $btnLoadGroups = B "btnLoadGroups"; $btnExportGroupsBtn = B "btnExportGroupsBtn"
+$ctxGroupDetails = B "ctxGroupDetails"
 $txtGroupFilter = B "txtGroupFilter"; $chkNestedMembers = B "chkNestedMembers"
 
 # Computers tab
@@ -1514,7 +1642,7 @@ function Invoke-Background {
 function Load-SystemInfo {
     try {
         Set-Status "Loading OS info..." 10
-    Write-Out "Get-CimInstance Win32_OperatingSystem" "CMD"
+        Write-Out "Get-CimInstance Win32_OperatingSystem" "CMD"
         $os = $null
         try { $os = Get-CimInstance Win32_OperatingSystem -ErrorAction Stop } catch { }
         if (-not $os) { try { $os = Get-WmiObject Win32_OperatingSystem -ErrorAction Stop } catch { } }
@@ -1523,6 +1651,8 @@ function Load-SystemInfo {
         $lblOSBuild.Text     = "Build: $($os.BuildNumber)"
         $lblOSArch.Text      = "Architecture: $($os.OSArchitecture)"
         $lblHostname.Text    = "Hostname: $env:COMPUTERNAME"
+        $lblRegUser.Text     = "Registered: $($os.RegisteredUser)"
+        $lblDomain2.Text     = "Domain: $env:USERDOMAIN"
         try { $idate = $os.InstallDate; if ($idate -is [string]) { $idate = [Management.ManagementDateTimeConverter]::ToDateTime($idate) }; $lblInstallDate.Text = "Install date: $($idate.ToString('yyyy-MM-dd'))" } catch { $lblInstallDate.Text = 'Install date: ?' }
         try { $lb = $os.LastBootUpTime; if ($lb -is [string]) { $lb = [Management.ManagementDateTimeConverter]::ToDateTime($lb) } } catch { $lb = $null }
         if ($lb) {
@@ -1532,8 +1662,25 @@ function Load-SystemInfo {
         } else { $lblLastBoot.Text = "Last boot: ?"; $lblUptime.Text = "Uptime: ?" }
         $lblTimeZone.Text    = "Time zone: $([System.TimeZoneInfo]::Local.DisplayName)"
 
-        Set-Status "Loading RAM..." 30
-    Write-Out "Get-CimInstance Win32_OperatingSystem  # reading TotalVisibleMemorySize, FreePhysicalMemory" "CMD"
+        Set-Status "Loading computer/BIOS info..." 20
+        Write-Out "Get-CimInstance Win32_ComputerSystem; Win32_BIOS" "CMD"
+        try {
+            $cs = Get-CimInstance Win32_ComputerSystem -ErrorAction Stop
+            $lblMfg.Text        = "Manufacturer: $($cs.Manufacturer)"
+            $lblModel.Text      = "Model: $($cs.Model)"
+            $lblSystemType.Text = "Type: $($cs.SystemType)"
+        } catch {}
+        try {
+            $bios = Get-CimInstance Win32_BIOS -ErrorAction Stop
+            $lblBiosMfg.Text  = "BIOS Mfg: $($bios.Manufacturer)"
+            $lblBiosVer.Text  = "BIOS Ver: $($bios.SMBIOSBIOSVersion)"
+            $lblBiosSN.Text   = "Serial No: $($bios.SerialNumber.Trim())"
+            $lblBiosDate.Text = "BIOS Date: $($bios.ReleaseDate)"
+            $lblSerial.Text   = "Serial No: $($bios.SerialNumber.Trim())"
+        } catch {}
+
+        Set-Status "Loading RAM..." 35
+        Write-Out "Get-CimInstance Win32_OperatingSystem  # reading TotalVisibleMemorySize, FreePhysicalMemory" "CMD"
         $rt = [math]::Round([long]$os.TotalVisibleMemorySize / 1MB, 2)
         $rf = [math]::Round([long]$os.FreePhysicalMemory / 1MB, 2)
         $ru = [math]::Round($rt - $rf, 2)
@@ -1543,9 +1690,16 @@ function Load-SystemInfo {
         $lblRamUsed.Text  = "Used: ${ru} GB"
         $lblRamPct.Text   = "Usage: ${rp}%"
         $pbRam.Value = $rp
+        try {
+            Write-Out "Get-CimInstance Win32_PhysicalMemory" "CMD"
+            $sticks = Get-CimInstance Win32_PhysicalMemory -ErrorAction Stop | ForEach-Object {
+                [PSCustomObject]@{Slot=$_.DeviceLocator; "Size MB"=[math]::Round($_.Capacity/1MB,0); Speed="$($_.Speed) MHz"; Part=$_.PartNumber.Trim(); Manufacturer=$_.Manufacturer}
+            }
+            $gridRamSticks.ItemsSource = [object[]]@($sticks)
+        } catch {}
 
         Set-Status "Loading disks..." 55
-    Write-Out 'Get-CimInstance Win32_LogicalDisk -Filter DriveType=3' 'CMD'
+        Write-Out 'Get-CimInstance Win32_LogicalDisk -Filter DriveType=3' 'CMD'
         $diskObjs = $null
         try { $diskObjs = Get-CimInstance Win32_LogicalDisk -Filter "DriveType=3" -ErrorAction Stop } catch { }
         if (-not $diskObjs) { try { $diskObjs = Get-WmiObject Win32_LogicalDisk -Filter "DriveType=3" -ErrorAction Stop } catch { } }
@@ -1558,9 +1712,16 @@ function Load-SystemInfo {
             }
         }
         $gridDisk.ItemsSource = [object[]]@($disks)
+        try {
+            Write-Out "Get-CimInstance Win32_DiskDrive" "CMD"
+            $phys = Get-CimInstance Win32_DiskDrive -ErrorAction Stop | ForEach-Object {
+                [PSCustomObject]@{Model=$_.Model; "Size GB"=[math]::Round($_.Size/1GB,1); Interface=$_.InterfaceType; Serial=$_.SerialNumber.Trim(); Partitions=$_.Partitions}
+            }
+            $gridPhysDisk.ItemsSource = [object[]]@($phys)
+        } catch {}
 
-        Set-Status "Loading CPU..." 80
-    Write-Out "Get-CimInstance Win32_Processor" "CMD"
+        Set-Status "Loading CPU..." 70
+        Write-Out "Get-CimInstance Win32_Processor" "CMD"
         $cpuObj = $null
         try { $cpuObj = Get-CimInstance Win32_Processor -ErrorAction Stop | Select-Object -First 1 } catch { }
         if (-not $cpuObj) { try { $cpuObj = Get-WmiObject Win32_Processor -ErrorAction Stop | Select-Object -First 1 } catch { } }
@@ -1573,6 +1734,51 @@ function Load-SystemInfo {
             if (-not $load) { try { $allC = Get-CimInstance Win32_Processor -EA Stop } catch { $allC = Get-WmiObject Win32_Processor -EA SilentlyContinue }; $load = if ($allC) { [math]::Round(($allC.LoadPercentage | Measure-Object -Average).Average,1) } else { "?" } }
             $lblCpuLoad.Text  = "Current Load: ${load}%"
         } else { $lblCpu.Text="CPU: (unavailable)"; $lblCpuCores.Text="Cores: ?"; $lblCpuSpeed.Text="Speed: ?"; $lblCpuLoad.Text="Load: ?" }
+
+        Set-Status "Loading network adapters..." 85
+        Write-Out "Get-CimInstance Win32_NetworkAdapterConfiguration -Filter IPEnabled=True" "CMD"
+        try {
+            $nics = Get-CimInstance Win32_NetworkAdapterConfiguration -Filter "IPEnabled=True" -ErrorAction Stop | ForEach-Object {
+                [PSCustomObject]@{Adapter=$_.Description; MAC=$_.MACAddress; IP=($_.IPAddress -join ", "); Gateway=($_.DefaultIPGateway -join ", "); DNS=($_.DNSServerSearchOrder -join ", ")}
+            }
+            $gridNetAdapters.ItemsSource = [object[]]@($nics)
+        } catch {}
+
+        Set-Status "Loading services..." 88
+        try {
+            Write-Out "Get-CimInstance Win32_Service" "CMD"
+            $svcs = Get-CimInstance Win32_Service -ErrorAction Stop | Sort-Object State, Name | ForEach-Object {
+                [PSCustomObject]@{Name=$_.Name; DisplayName=$_.DisplayName; State=$_.State; StartMode=$_.StartMode; Account=$_.StartName}
+            }
+            $gridServices.ItemsSource = [object[]]@($svcs)
+            # Live filter
+            $Script:AllServices = $svcs
+            $txtSvcFilter.Add_TextChanged({
+                $ft = $txtSvcFilter.Text.Trim()
+                $gridServices.ItemsSource = if ($ft) {
+                    [object[]]@($Script:AllServices | Where-Object { $_.Name -like "*$ft*" -or $_.DisplayName -like "*$ft*" })
+                } else { [object[]]@($Script:AllServices) }
+            })
+        } catch {}
+
+        Set-Status "Loading startup apps..." 92
+        try {
+            Write-Out "Get-CimInstance Win32_StartupCommand" "CMD"
+            $su = Get-CimInstance Win32_StartupCommand -ErrorAction Stop | ForEach-Object {
+                [PSCustomObject]@{Name=$_.Name; Command=$_.Command; Location=$_.Location; User=$_.User}
+            }
+            $gridStartup.ItemsSource = [object[]]@($su)
+        } catch {}
+
+        Set-Status "Loading processes..." 95
+        try {
+            Write-Out "Get-Process | Sort CPU -Desc | Top 30" "CMD"
+            $procs = Get-Process -ErrorAction Stop | Sort-Object CPU -Descending | Select-Object -First 30 | ForEach-Object {
+                [PSCustomObject]@{Name=$_.Name; PID=$_.Id; "CPU s"=[math]::Round($_.CPU,1); "RAM MB"=[math]::Round($_.WorkingSet/1MB,1); Company=$_.Company}
+            }
+            $gridProcs.ItemsSource = [object[]]@($procs)
+        } catch {}
+
         Set-Status "System info loaded." 100
     } catch { Set-Status "Error loading system info." 0; Write-ADLog "ERROR Load-SystemInfo: $($_.Exception.Message)" "ERROR" }
 }
@@ -2868,6 +3074,166 @@ $btnExportPermsResult.Add_Click({ Export-ToCSV -Data $Script:CachedPermsCheck -D
 $btnLoadUsers.Add_Click({ Load-ADUsers -Filter $txtUserFilter.Text.Trim() -DisabledOnly ($chkDisabledUsers.IsChecked -eq $true) })
 $txtUserFilter.Add_KeyDown({ param($s,$e); if ($e.Key -eq "Return") { Load-ADUsers -Filter $txtUserFilter.Text.Trim() -DisabledOnly ($chkDisabledUsers.IsChecked -eq $true) } })
 $btnExportUsersBtn.Add_Click({ Export-ToCSV -Data $Script:CachedUsers -DefaultName "AD_Users.csv" })
+
+# ── USER AUTH AUDIT ────────────────────────────────────────────────────────────
+function Show-UserAuthAudit {
+    $sel = $gridUsers.SelectedItem
+    if (-not $sel) { Show-Info "Select a user from the list first."; return }
+    $username = $sel.Username
+    if (-not $username) { Show-Info "Could not determine username."; return }
+
+    [xml]$auditXaml = @"
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Auth Audit - $username" Width="1100" Height="640" MinWidth="700" MinHeight="440"
+        WindowStartupLocation="CenterOwner" ResizeMode="CanResize" Background="#F8F9FA">
+  <Grid Margin="12">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="*"/>
+      <RowDefinition Height="Auto"/>
+    </Grid.RowDefinitions>
+    <TextBlock Grid.Row="0" Text="Authentication Audit - $username" FontSize="16" FontWeight="Bold" Foreground="#1E3A5F" Margin="0,0,0,8"/>
+    <!-- Audit prerequisite notice -->
+    <Border Grid.Row="1" Background="#FFF8E1" BorderBrush="#F9A825" BorderThickness="1" CornerRadius="4" Padding="10,8" Margin="0,0,0,8">
+      <StackPanel>
+        <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="#5D4037">
+          <Run FontWeight="Bold">Requirement: </Run>
+          <Run>Audit policies must be enabled in Group Policy for events to be recorded on DCs.</Run>
+        </TextBlock>
+        <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="#5D4037" Margin="0,4,0,0"
+                   Text="Required: Computer Config -> Windows Settings -> Security Settings -> Advanced Audit Policy -> Account Logon (enable: Kerberos Authentication Service, Credential Validation) and Logon/Logoff (enable: Logon, Account Lockout)."/>
+        <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="#5D4037" Margin="0,4,0,0"
+                   Text="Also check: File > Settings > Audit Policies tab to verify and apply audit settings."/>
+      </StackPanel>
+    </Border>
+    <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,0,0,8">
+      <TextBlock Text="Days back:" VerticalAlignment="Center" Margin="0,0,6,0" FontSize="12"/>
+      <TextBox x:Name="txtAuditDays" Width="50" Height="26" Text="7" FontSize="12" VerticalContentAlignment="Center" Padding="4,0" Margin="0,0,12,0"/>
+      <Button x:Name="btnRunAudit" Content="Run Audit" Width="100" Height="28" Background="#1E6EB5" Foreground="White" BorderThickness="0" FontWeight="SemiBold" Cursor="Hand" Margin="0,0,8,0"/>
+      <Button x:Name="btnStopAudit" Content="Stop" Width="70" Height="28" Background="#E74C3C" Foreground="White" BorderThickness="0" FontWeight="SemiBold" Cursor="Hand" Visibility="Collapsed"/>
+      <TextBlock x:Name="lblAuditStatus" Text="Select days and click Run Audit" FontSize="11" Foreground="#555" VerticalAlignment="Center" Margin="12,0,0,0" TextWrapping="Wrap"/>
+    </StackPanel>
+    <Border Grid.Row="3" BorderBrush="#DDE1E7" BorderThickness="1" CornerRadius="4">
+      <DataGrid x:Name="gridAuditDlg" AutoGenerateColumns="True" IsReadOnly="True"
+                GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#EEEEEE"
+                RowBackground="White" AlternatingRowBackground="#F8F9FA"
+                CanUserSortColumns="True" CanUserResizeColumns="True"
+                HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" FontSize="11"/>
+    </Border>
+    <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
+      <Button x:Name="btnAuditExport" Content="Export CSV" Width="100" Height="28" Background="#27AE60" Foreground="White" BorderThickness="0" FontWeight="SemiBold" Cursor="Hand" Margin="0,0,8,0"/>
+      <Button x:Name="btnAuditClose" Content="Close" Width="80" Height="28" Background="#555" Foreground="White" BorderThickness="0" FontWeight="SemiBold" Cursor="Hand"/>
+    </StackPanel>
+  </Grid>
+</Window>
+"@
+    $auditR = [System.Xml.XmlNodeReader]::new($auditXaml)
+    $auditW = [Windows.Markup.XamlReader]::Load($auditR)
+    $auditW.Owner = $Window
+
+    $aGrid  = $auditW.FindName("gridAuditDlg")
+    $aDays  = $auditW.FindName("txtAuditDays")
+    $aBtn   = $auditW.FindName("btnRunAudit")
+    $aStop  = $auditW.FindName("btnStopAudit")
+    $aLbl   = $auditW.FindName("lblAuditStatus")
+    $aExp   = $auditW.FindName("btnAuditExport")
+    $aClose = $auditW.FindName("btnAuditClose")
+    $aGrid.Add_Sorting($Script:SortHandler)
+    $Script:AuditResults = @()
+    $Script:AuditCancel = $false
+
+    $aBtn.Add_Click({
+        $Script:AuditCancel = $false
+        $aBtn.IsEnabled = $false
+        $aStop.Visibility = [System.Windows.Visibility]::Visible
+        $days = 7; [int]::TryParse($aDays.Text.Trim(),[ref]$days)|Out-Null
+        $days = [math]::Max(1,[math]::Min($days,90))
+        $aLbl.Text = "Starting audit for $username, last $days days..."
+        $aGrid.ItemsSource = $null
+
+        # Capture for runspace
+        $__lbl=$aLbl; $__grid=$aGrid; $__btn=$aBtn; $__stop=$aStop
+        $__user=$username; $__days=$days; $__cancelRef=[ref]$Script:AuditCancel
+
+        $auditStr = @'
+param($lbl,$grid,$btn,$stop,$user,$days,$cancelRef)
+function ui{param($c,$sb)try{$c.Dispatcher.Invoke([System.Action]$sb)}catch{}}
+$startTime=(Get-Date).AddDays(-$days)
+$eventIds=@(4624,4625,4768,4769,4771,4776,4740)
+$results=[System.Collections.Generic.List[object]]::new()
+try{$dcs=Get-ADDomainController -Filter * | Sort-Object HostName}catch{$dcs=@()}
+$total=$dcs.Count;$idx=0
+foreach($dc in $dcs){
+    if($cancelRef.Value){break}
+    $idx++
+    ui $lbl {$lbl.Text="Querying DC $idx/$($total): $($dc.HostName)..."}
+    try{
+        $events=Get-WinEvent -ComputerName $dc.HostName -FilterHashtable @{LogName='Security';ID=$eventIds;StartTime=$startTime} -ErrorAction Stop
+        foreach($ev in $events){
+            if($cancelRef.Value){break}
+            try{
+                $xml=[xml]$ev.ToXml();$data=@{}
+                foreach($item in $xml.Event.EventData.Data){$data[$item.Name]=$item.'#text'}
+                $acc=$null;$matched=$false;$status='';$desc='';$src='';$ws='';$auth='';$lt=''
+                switch($ev.Id){
+                    4624{$acc=$data.TargetUserName;if($acc -ieq $user){$matched=$true;$status='Logon OK';$desc='Successful logon';$src=$data.IpAddress;$ws=$data.WorkstationName;$auth=$data.AuthenticationPackageName;$lt=$data.LogonType}}
+                    4625{$acc=$data.TargetUserName;if($acc -ieq $user){$matched=$true;$status='Logon FAIL';$desc='Failed logon';$src=$data.IpAddress;$ws=$data.WorkstationName;$auth=$data.AuthenticationPackageName;$lt=$data.LogonType}}
+                    4768{$acc=$data.TargetUserName;if($acc -ieq $user){$matched=$true;$status='Kerberos TGT';$desc='Kerberos initial auth';$src=$data.IpAddress;$ws=$data.WorkstationName;$auth='Kerberos'}}
+                    4769{$acc=$data.TargetUserName;if($acc -ieq $user){$matched=$true;$status='Kerberos Svc';$desc='Kerberos service ticket';$src=$data.IpAddress;$ws=$data.ServiceName;$auth='Kerberos'}}
+                    4771{$acc=$data.TargetUserName;if($acc -ieq $user){$matched=$true;$status='Kerberos FAIL';$desc='Kerberos pre-auth failed';$src=$data.IpAddress;$ws=$data.WorkstationName;$auth='Kerberos'}}
+                    4776{$acc=$data.TargetUserName;if($acc -ieq $user){$matched=$true;$status='NTLM';$desc='NTLM authentication';$src=$data.Workstation;$ws=$data.Workstation;$auth='NTLM'}}
+                    4740{$acc=$data.TargetUserName;if($acc -ieq $user){$matched=$true;$status='LOCKED OUT';$desc='Account lockout';$src=$data.CallerComputerName;$ws=$data.CallerComputerName}}
+                }
+                if($matched){
+                    $ltTxt=switch($lt){'2'{'Interactive/Console'}'3'{'Network'}'4'{'Batch'}'5'{'Service'}'7'{'Unlock'}'8'{'ClearText'}'10'{'RDP'}'11'{'CachedInteractive'}default{$lt}}
+                    [void]$results.Add([PSCustomObject]@{Time=$ev.TimeCreated;DC=$dc.HostName;EventID=$ev.Id;Status=$status;Description=$desc;Source=$src;Workstation=$ws;LogonType=$ltTxt;AuthPackage=$auth})
+                }
+            }catch{}
+        }
+    }catch{[void]$results.Add([PSCustomObject]@{Time=(Get-Date);DC=$dc.HostName;EventID=0;Status='DC ERROR';Description=$_.Exception.Message;Source='';Workstation='';LogonType='';AuthPackage=''})}
+    $snap=[object[]]@($results|Sort-Object Time -Descending)
+    ui $grid {$grid.ItemsSource=$snap}
+}
+$all=[object[]]@($results|Sort-Object Time -Descending)
+ui $grid {$grid.ItemsSource=$all}
+$msg=if($cancelRef.Value){"Stopped. Found $($results.Count) events."}elseif($results.Count -eq 0){"No events found. Verify Audit policies are enabled in GPO (see yellow notice above)."}else{"Done. Found $($results.Count) events for $user."}
+ui $lbl  {$lbl.Text=$msg}
+ui $btn  {$btn.IsEnabled=$true}
+ui $stop {$stop.Visibility=[System.Windows.Visibility]::Collapsed}
+'@
+        $rs=[System.Management.Automation.Runspaces.RunspaceFactory]::CreateRunspace()
+        $rs.ApartmentState='STA';$rs.ThreadOptions='ReuseThread';$rs.Open()
+        $ps=[System.Management.Automation.PowerShell]::Create()
+        $ps.Runspace=$rs
+        [void]$ps.AddScript([scriptblock]::Create($auditStr)).AddArgument($__lbl).AddArgument($__grid).AddArgument($__btn).AddArgument($__stop).AddArgument($__user).AddArgument($__days).AddArgument($__cancelRef)
+        $handle=$ps.BeginInvoke()
+        $tmr=New-Object System.Windows.Threading.DispatcherTimer
+        $tmr.Interval=[TimeSpan]::FromMilliseconds(500)
+        $tmr.Add_Tick({
+            if($handle.IsCompleted){
+                $tmr.Stop()
+                try{$ps.EndInvoke($handle)}catch{}
+                $ps.Dispose();$rs.Dispose()
+            }
+        })
+        $tmr.Start()
+    })
+
+    $aStop.Add_Click({ $Script:AuditCancel = $true; $aStop.IsEnabled = $false })
+    $aExp.Add_Click({
+        $d = $aGrid.ItemsSource
+        if (-not $d -or @($d).Count -eq 0) { Show-Info "No results to export."; return }
+        $safeUser = $username -replace '[\\/:*?"<>|]','_'
+        Export-ToCSV -Data @($d) -DefaultName "AuthAudit_$safeUser.csv"
+    })
+    $aClose.Add_Click({ $Script:AuditCancel = $true; $auditW.Close() })
+    $auditW.ShowDialog() | Out-Null
+}
+
+$btnUserAudit.Add_Click({ Show-UserAuthAudit })
 $btnEnableSelected.Add_Click({ Set-SelectedAccountState -Enable $true })
 $btnResetPassword.Add_Click({
     $sel = $gridUsers.SelectedItem
@@ -2901,6 +3267,218 @@ $btnMemberOf.Add_Click({
 $btnLoadGroups.Add_Click({ Load-ADGroups -Filter $txtGroupFilter.Text.Trim() -IncludeNested ($chkNestedMembers.IsChecked -eq $true) })
 $txtGroupFilter.Add_KeyDown({ param($s,$e); if ($e.Key -eq "Return") { Load-ADGroups -Filter $txtGroupFilter.Text.Trim() -IncludeNested ($chkNestedMembers.IsChecked -eq $true) } })
 $btnExportGroupsBtn.Add_Click({ Export-ToCSV -Data $Script:CachedGroups -DefaultName "AD_Groups.csv" })
+$ctxGroupDetails.Add_Click({ Show-GroupDetails })
+$gridGroups.Add_MouseDoubleClick({ param($s,$e) if($gridGroups.SelectedItem){ Show-GroupDetails } })
+
+function Show-GroupDetails {
+    $sel = $gridGroups.SelectedItem
+    if (-not $sel) { Show-Err "Select a group first."; return }
+    if (-not (Ensure-ADModule)) { return }
+    try {
+        $g = Get-ADGroup -Identity $sel.SAMAccount -Properties * -ErrorAction Stop
+        $members = @(Get-ADGroupMember -Identity $g -ErrorAction Stop | Sort-Object Name)
+        $Script:GroupDetailObj  = $g
+        $Script:GroupDetailMembers = $members
+
+        [xml]$gdXml = [xml]([string]@'
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Group Details" Width="900" Height="640" MinWidth="700" MinHeight="500"
+        WindowStartupLocation="CenterOwner" ResizeMode="CanResize" Background="#F8F9FA">
+  <Grid Margin="12">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="*"/>
+      <RowDefinition Height="Auto"/>
+    </Grid.RowDefinitions>
+    <TextBlock Grid.Row="0" x:Name="lblGrpTitle" FontSize="15" FontWeight="Bold" Foreground="#1E3A5F" Margin="0,0,0,10"/>
+    <Grid Grid.Row="1">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="280"/>
+        <ColumnDefinition Width="4"/>
+        <ColumnDefinition Width="*"/>
+      </Grid.ColumnDefinitions>
+      <!-- Left: Group Info -->
+      <Border Grid.Column="0" BorderBrush="#DDE1E7" BorderThickness="1" CornerRadius="4">
+        <TextBox x:Name="txtGrpDetail" IsReadOnly="True" FontFamily="Consolas" FontSize="11"
+                 TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"
+                 Background="#1a1a2e" Foreground="#00e676" Padding="10" BorderThickness="0"/>
+      </Border>
+      <GridSplitter Grid.Column="1" Width="4" HorizontalAlignment="Center" VerticalAlignment="Stretch" Background="#CCD3DC" ShowsPreview="True"/>
+      <!-- Right: Members -->
+      <Grid Grid.Column="2">
+        <Grid.RowDefinitions>
+          <RowDefinition Height="Auto"/>
+          <RowDefinition Height="*"/>
+          <RowDefinition Height="Auto"/>
+          <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <TextBlock Grid.Row="0" x:Name="lblMembersCount" Text="Members" FontSize="12" FontWeight="SemiBold" Foreground="#1E3A5F" Margin="4,0,0,6"/>
+        <Border Grid.Row="1" BorderBrush="#DDE1E7" BorderThickness="1" CornerRadius="4">
+          <ListBox x:Name="lstMembers" FontSize="12" BorderThickness="0"
+                   SelectionMode="Extended" ToolTip="Ctrl+Click or Shift+Click for multiple selection"/>
+        </Border>
+        <!-- Add member -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,8,0,4">
+          <TextBox x:Name="txtAddMember" Width="160" Height="26" FontSize="11"
+                   VerticalContentAlignment="Center" Padding="6,0" BorderBrush="#CCC" BorderThickness="1"
+                   ToolTip="Type username (SAMAccountName) then click Add, or Browse"/>
+          <Button x:Name="btnBrowseMember" Content="Browse..." Width="75" Height="26"
+                  BorderBrush="#555" BorderThickness="1" FontSize="11" Cursor="Hand" Margin="4,0,0,0"
+                  ToolTip="Search AD users to add"/>
+          <Button x:Name="btnAddMember" Content="Add" Width="55" Height="26"
+                  Background="#27AE60" Foreground="White" BorderThickness="0"
+                  FontWeight="SemiBold" Cursor="Hand" Margin="4,0,0,0"/>
+        </StackPanel>
+        <Button Grid.Row="3" x:Name="btnRemoveMember" Content="Remove Selected Members"
+                Height="28" Background="#E74C3C" Foreground="White" BorderThickness="0"
+                FontWeight="SemiBold" Cursor="Hand" ToolTip="Remove selected members from this group"/>
+      </Grid>
+    </Grid>
+    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+      <Button x:Name="btnGrpCopy"  Content="Copy Info" Width="90" Height="28" Background="#1E6EB5" Foreground="White" BorderThickness="0" FontWeight="SemiBold" Cursor="Hand" Margin="0,0,8,0"/>
+      <Button x:Name="btnGrpClose" Content="Close" Width="80" Height="28" BorderBrush="#CCC" BorderThickness="1" Cursor="Hand"/>
+    </StackPanel>
+  </Grid>
+</Window>
+'@)
+        $gdR = [System.Xml.XmlNodeReader]::new($gdXml)
+        $gdW = [Windows.Markup.XamlReader]::Load($gdR)
+        $gdW.Owner = $Window
+
+        $lblTitle    = $gdW.FindName("lblGrpTitle")
+        $txtDet      = $gdW.FindName("txtGrpDetail")
+        $lstMbrs     = $gdW.FindName("lstMembers")
+        $lblMbrCnt   = $gdW.FindName("lblMembersCount")
+        $txtAddMbr   = $gdW.FindName("txtAddMember")
+        $btnBrowseMbr= $gdW.FindName("btnBrowseMember")
+        $btnAddMbr   = $gdW.FindName("btnAddMember")
+        $btnRemoveMbr= $gdW.FindName("btnRemoveMember")
+
+        $Script:GdW = $gdW; $Script:GdLstMbrs = $lstMbrs; $Script:GdLblCnt = $lblMbrCnt
+        $Script:GdTxtAddMbr = $txtAddMbr
+
+        $lblTitle.Text = "Group: $($g.Name)  ($($g.GroupCategory) / $($g.GroupScope))"
+
+        # Build info text
+        $info  = "Name        : $($g.Name)`n"
+        $info += "SAMAccount  : $($g.SamAccountName)`n"
+        $info += "Category    : $($g.GroupCategory)`n"
+        $info += "Scope       : $($g.GroupScope)`n"
+        $info += "Description : $($g.Description)`n"
+        $info += "Email       : $($g.mail)`n"
+        $info += "ManagedBy   : $(if($g.ManagedBy){($g.ManagedBy -split ',')[0] -replace '^CN=',''}else{''})`n"
+        $info += "Created     : $($g.WhenCreated)`n"
+        $info += "Modified    : $($g.WhenChanged)`n"
+        $info += "Members     : $($members.Count)`n"
+        $info += "DN          : $($g.DistinguishedName)"
+        $txtDet.Text = $info
+
+        # Populate members
+        $lstMbrs.Items.Clear()
+        foreach ($m in $members) { [void]$lstMbrs.Items.Add("$($m.Name)  [$($m.objectClass)]") }
+        $lblMbrCnt.Text = "Members ($($members.Count)) - Ctrl+Click for multi-select"
+
+        # Browse users to add
+        $btnBrowseMbr.Add_Click({
+            [xml]$bXml = [xml]([string]@'
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Browse Users/Groups" Width="500" Height="420" MinWidth="380" MinHeight="320"
+        WindowStartupLocation="CenterOwner" ResizeMode="CanResize" Background="#F8F9FA">
+  <Grid Margin="12">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="*"/>
+      <RowDefinition Height="Auto"/>
+    </Grid.RowDefinitions>
+    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
+      <TextBox x:Name="txtMbrSearch" Width="280" Height="28" FontSize="12" VerticalContentAlignment="Center" Padding="6,0" BorderBrush="#CCC" BorderThickness="1" ToolTip="Search users or groups by name"/>
+      <Button x:Name="btnMbrSearch" Content="Search" Width="80" Height="28" Background="#1E6EB5" Foreground="White" BorderThickness="0" FontWeight="SemiBold" Cursor="Hand" Margin="6,0,0,0"/>
+    </StackPanel>
+    <ListBox x:Name="lstMbrResults" Grid.Row="1" FontSize="12" BorderBrush="#DDE1E7" BorderThickness="1" SelectionMode="Extended" ToolTip="Ctrl+Click or Shift+Click for multiple"/>
+    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
+      <Button x:Name="btnMbrSelect" Content="Add Selected" Width="100" Height="28" Background="#27AE60" Foreground="White" BorderThickness="0" FontWeight="SemiBold" Cursor="Hand" Margin="0,0,8,0"/>
+      <Button x:Name="btnMbrCancel" Content="Cancel" Width="80" Height="28" BorderBrush="#CCC" BorderThickness="1" Cursor="Hand"/>
+    </StackPanel>
+  </Grid>
+</Window>
+'@)
+            $bR2 = [System.Xml.XmlNodeReader]::new($bXml)
+            $bW2 = [Windows.Markup.XamlReader]::Load($bR2)
+            $bW2.Owner = $gdW
+            $bSrch = $bW2.FindName("txtMbrSearch")
+            $bLst  = $bW2.FindName("lstMbrResults")
+            $Script:MbrSearchCtrl = $bSrch; $Script:MbrListCtrl = $bLst
+            # Load all users on open
+            $Script:MbrDoSearch = {
+                $q = $Script:MbrSearchCtrl.Text.Trim()
+                $Script:MbrListCtrl.Items.Clear()
+                try {
+                    $filter = if ($q) { "SamAccountName -like '*$q*' -or Name -like '*$q*'" } else { "Name -like '*'" }
+                    $users = Get-ADUser -Filter $filter -ResultSetSize 200 -EA Stop | Sort-Object SamAccountName
+                    foreach ($u2 in $users) { [void]$Script:MbrListCtrl.Items.Add("$($u2.SamAccountName)  ($($u2.Name))") }
+                    $groups2 = Get-ADGroup -Filter $filter -ResultSetSize 100 -EA Stop | Sort-Object Name
+                    foreach ($g2 in $groups2) { [void]$Script:MbrListCtrl.Items.Add("$($g2.SamAccountName)  [Group]") }
+                } catch { [void]$Script:MbrListCtrl.Items.Add("Error: $($_.Exception.Message)") }
+            }
+            & $Script:MbrDoSearch
+            $bSrch.Add_KeyDown({ param($s,$e) if($e.Key -eq "Return"){ & $Script:MbrDoSearch } })
+            $bW2.FindName("btnMbrSearch").Add_Click({ & $Script:MbrDoSearch })
+            $bW2.FindName("btnMbrSelect").Add_Click({
+                $selected = @($bLst.SelectedItems | Where-Object { $_ -notlike '*Error*' })
+                if ($selected.Count -eq 0) { return }
+                foreach ($item in $selected) {
+                    $sam = ($item -split '\s+')[0]
+                    try {
+                        Add-ADGroupMember -Identity $Script:GroupDetailObj.SamAccountName -Members $sam -EA Stop
+                        if (-not ($Script:GdLstMbrs.Items | Where-Object { $_ -like "$sam *" })) {
+                            [void]$Script:GdLstMbrs.Items.Add("$sam  [added]")
+                        }
+                    } catch { [System.Windows.MessageBox]::Show("Error adding $sam`: $($_.Exception.Message)","Error","OK","Error")|Out-Null }
+                }
+                $Script:GdLblCnt.Text = "Members ($($Script:GdLstMbrs.Items.Count)) - Ctrl+Click for multi-select"
+                $bW2.Close()
+            })
+            $bW2.FindName("btnMbrCancel").Add_Click({ $bW2.Close() })
+            $bW2.ShowDialog() | Out-Null
+        })
+
+        # Add member manually
+        $btnAddMbr.Add_Click({
+            $sam = $Script:GdTxtAddMbr.Text.Trim()
+            if (-not $sam) { return }
+            try {
+                Add-ADGroupMember -Identity $Script:GroupDetailObj.SamAccountName -Members $sam -EA Stop
+                if (-not ($Script:GdLstMbrs.Items | Where-Object { $_ -like "$sam *" })) {
+                    [void]$Script:GdLstMbrs.Items.Add("$sam  [added]")
+                }
+                $Script:GdTxtAddMbr.Text = ""
+                $Script:GdLblCnt.Text = "Members ($($Script:GdLstMbrs.Items.Count))"
+            } catch { [System.Windows.MessageBox]::Show("Error: $($_.Exception.Message)","Error","OK","Error")|Out-Null }
+        })
+
+        # Remove members
+        $btnRemoveMbr.Add_Click({
+            $selected = @($Script:GdLstMbrs.SelectedItems)
+            if ($selected.Count -eq 0) { [System.Windows.MessageBox]::Show("Select members to remove.","Info","OK","Information")|Out-Null; return }
+            $confirm = [System.Windows.MessageBox]::Show("Remove $($selected.Count) member(s) from $($Script:GroupDetailObj.Name)?","Confirm","YesNo","Warning")
+            if ($confirm -ne "Yes") { return }
+            foreach ($item in $selected) {
+                $sam = ($item -split '\s+')[0]
+                try {
+                    Remove-ADGroupMember -Identity $Script:GroupDetailObj.SamAccountName -Members $sam -Confirm:$false -EA Stop
+                    [void]$lstMbrs.Items.Remove($item)
+                } catch { [System.Windows.MessageBox]::Show("Error removing $sam`: $($_.Exception.Message)","Error","OK","Error")|Out-Null }
+            }
+            $lblMbrCnt.Text = "Members ($($lstMbrs.Items.Count))"
+        })
+
+        $gdW.FindName("btnGrpCopy").Add_Click({ [System.Windows.Clipboard]::SetText($info) })
+        $gdW.FindName("btnGrpClose").Add_Click({ $gdW.Close() })
+        $gdW.ShowDialog() | Out-Null
+    } catch { Show-Err "Error: $($_.Exception.Message)" }
+}
 
 $btnLoadComputers.Add_Click({ Load-ADComputers -Filter $txtComputerFilter.Text.Trim() })
 $txtComputerFilter.Add_KeyDown({ param($s,$e); if ($e.Key -eq "Return") { Load-ADComputers -Filter $txtComputerFilter.Text.Trim() } })
@@ -3038,48 +3616,213 @@ $menuAbout.Add_Click({
 
 # ── SETTINGS DIALOG ──────────────────────────────────────────────────────────
 $menuSettings.Add_Click({
-    [xml]$setXml = @"
+    $setXml = [xml]([string]@'
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Settings" Width="420" Height="340"
-        WindowStartupLocation="CenterOwner" ResizeMode="NoResize" Background="#F8F9FA">
-  <StackPanel Margin="24,20">
-    <TextBlock Text="Settings" FontSize="16" FontWeight="Bold" Foreground="#1E3A5F" Margin="0,0,0,16"/>
-    <TextBlock Text="Keyboard Shortcuts" FontSize="12" FontWeight="SemiBold" Foreground="#1E3A5F" Margin="0,0,0,8"/>
-    <Grid Margin="0,0,0,12">
-      <Grid.ColumnDefinitions><ColumnDefinition Width="160"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-      <Grid.RowDefinitions><RowDefinition Height="28"/><RowDefinition Height="28"/><RowDefinition Height="28"/></Grid.RowDefinitions>
-      <TextBlock Grid.Row="0" Grid.Column="0" Text="Refresh current tab:" VerticalAlignment="Center" FontSize="11"/>
-      <TextBox x:Name="txtShortcutRefresh" Grid.Row="0" Grid.Column="1" Text="F5" Height="24" Padding="6,0" FontSize="11" BorderBrush="#CCC" BorderThickness="1"/>
-      <TextBlock Grid.Row="1" Grid.Column="0" Text="Export:" VerticalAlignment="Center" FontSize="11"/>
-      <TextBox x:Name="txtShortcutExport"  Grid.Row="1" Grid.Column="1" Text="Ctrl+E" Height="24" Padding="6,0" FontSize="11" BorderBrush="#CCC" BorderThickness="1"/>
-      <TextBlock Grid.Row="2" Grid.Column="0" Text="Focus filter:" VerticalAlignment="Center" FontSize="11"/>
-      <TextBox x:Name="txtShortcutFilter"  Grid.Row="2" Grid.Column="1" Text="Ctrl+F" Height="24" Padding="6,0" FontSize="11" BorderBrush="#CCC" BorderThickness="1"/>
-    </Grid>
-    <Separator Margin="0,0,0,12"/>
-    <TextBlock Text="Features" FontSize="12" FontWeight="SemiBold" Foreground="#1E3A5F" Margin="0,0,0,8"/>
-    <CheckBox x:Name="chkSettingsLiveFilter" Content="Enable live filter on DataGrids" IsChecked="True" FontSize="11" Margin="0,0,0,6"/>
-    <CheckBox x:Name="chkSettingsConfirmDestructive" Content="Confirm before Enable/Disable/Reset" IsChecked="True" FontSize="11" Margin="0,0,0,6"/>
-    <CheckBox x:Name="chkSettingsRowCount" Content="Show row count below grids" IsChecked="True" FontSize="11" Margin="0,0,0,6"/>
-    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+        Title="Settings" Width="780" Height="720" MinWidth="600" MinHeight="500"
+        WindowStartupLocation="CenterOwner" ResizeMode="CanResize" Background="#F8F9FA">
+  <Grid Margin="16">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="*"/>
+      <RowDefinition Height="Auto"/>
+    </Grid.RowDefinitions>
+    <TextBlock Grid.Row="0" Text="Settings" FontSize="16" FontWeight="Bold" Foreground="#1E3A5F" Margin="0,0,0,12"/>
+    <TabControl Grid.Row="1">
+      <TabItem Header="General">
+        <StackPanel Margin="16,12">
+          <TextBlock Text="Keyboard Shortcuts" FontSize="12" FontWeight="SemiBold" Foreground="#1E3A5F" Margin="0,0,0,8"/>
+          <Grid Margin="0,0,0,12">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="160"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+            <Grid.RowDefinitions><RowDefinition Height="28"/><RowDefinition Height="28"/><RowDefinition Height="28"/></Grid.RowDefinitions>
+            <TextBlock Grid.Row="0" Grid.Column="0" Text="Refresh current tab:" VerticalAlignment="Center" FontSize="11"/>
+            <TextBox x:Name="txtShortcutRefresh" Grid.Row="0" Grid.Column="1" Text="F5" Height="24" Padding="6,0" FontSize="11" BorderBrush="#CCC" BorderThickness="1"/>
+            <TextBlock Grid.Row="1" Grid.Column="0" Text="Export:" VerticalAlignment="Center" FontSize="11"/>
+            <TextBox x:Name="txtShortcutExport"  Grid.Row="1" Grid.Column="1" Text="Ctrl+E" Height="24" Padding="6,0" FontSize="11" BorderBrush="#CCC" BorderThickness="1"/>
+            <TextBlock Grid.Row="2" Grid.Column="0" Text="Focus filter:" VerticalAlignment="Center" FontSize="11"/>
+            <TextBox x:Name="txtShortcutFilter"  Grid.Row="2" Grid.Column="1" Text="Ctrl+F" Height="24" Padding="6,0" FontSize="11" BorderBrush="#CCC" BorderThickness="1"/>
+          </Grid>
+          <Separator Margin="0,0,0,12"/>
+          <TextBlock Text="Features" FontSize="12" FontWeight="SemiBold" Foreground="#1E3A5F" Margin="0,0,0,8"/>
+          <CheckBox x:Name="chkSettingsLiveFilter" Content="Enable live filter on DataGrids" IsChecked="True" FontSize="11" Margin="0,0,0,6"/>
+          <CheckBox x:Name="chkSettingsConfirmDestructive" Content="Confirm before Enable/Disable/Reset" IsChecked="True" FontSize="11" Margin="0,0,0,6"/>
+          <CheckBox x:Name="chkSettingsRowCount" Content="Show row count below grids" IsChecked="True" FontSize="11" Margin="0,0,0,6"/>
+        </StackPanel>
+      </TabItem>
+      <TabItem Header="Audit Policies">
+        <Grid>
+          <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="4"/>
+            <RowDefinition Height="160" MinHeight="80"/>
+          </Grid.RowDefinitions>
+          <!-- Info + buttons -->
+          <StackPanel Grid.Row="0" Margin="8,8,8,4">
+            <Border Background="#FFF8E1" BorderBrush="#F9A825" BorderThickness="1" CornerRadius="4" Padding="8,6" Margin="0,0,0,8">
+              <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="#5D4037"
+                Text="GPO path: Computer Config - Windows Settings - Security Settings - Advanced Audit Policy Configuration. Check Current Status reads local auditpol. Apply sets policies directly on this DC."/>
+            </Border>
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+              <Button x:Name="btnCheckAudit"  Content="Check Current Status" Width="170" Height="26" Background="#1E6EB5" Foreground="White" BorderThickness="0" FontWeight="SemiBold" Cursor="Hand" Margin="0,0,8,0"/>
+              <Button x:Name="btnApplyAudit"  Content="Apply via auditpol"   Width="150" Height="26" Background="#E74C3C" Foreground="White" BorderThickness="0" FontWeight="SemiBold" Cursor="Hand" Margin="0,0,8,0"/>
+              <Button x:Name="btnSelectAllS"  Content="All Success"           Width="90"  Height="26" BorderBrush="#555" BorderThickness="1" Cursor="Hand" Margin="0,0,4,0" FontSize="11"/>
+              <Button x:Name="btnSelectAllF"  Content="All Failure"           Width="90"  Height="26" BorderBrush="#555" BorderThickness="1" Cursor="Hand" Margin="0,0,4,0" FontSize="11"/>
+              <Button x:Name="btnClearAll"    Content="Clear All"             Width="80"  Height="26" BorderBrush="#999" BorderThickness="1" Cursor="Hand" FontSize="11"/>
+            </StackPanel>
+          </StackPanel>
+          <!-- Audit policy table -->
+          <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="8,0,8,8">
+              <!-- Header row -->
+              <Grid Margin="0,0,0,4">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="*"/>
+                  <ColumnDefinition Width="70"/>
+                  <ColumnDefinition Width="70"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="Subcategory" FontSize="11" FontWeight="Bold" Foreground="#1E3A5F"/>
+                <TextBlock Grid.Column="1" Text="Success" FontSize="11" FontWeight="Bold" Foreground="#1E3A5F" HorizontalAlignment="Center"/>
+                <TextBlock Grid.Column="2" Text="Failure" FontSize="11" FontWeight="Bold" Foreground="#1E3A5F" HorizontalAlignment="Center"/>
+              </Grid>
+              <Separator Margin="0,0,0,6"/>
+              <!-- Account Logon -->
+              <TextBlock Text="Account Logon" FontSize="11" FontWeight="SemiBold" Foreground="#1E3A5F" Background="#EEF2F7" Padding="4,2" Margin="0,4,0,2"/>
+              <Grid x:Name="rowKerberos"  Margin="4,1,0,1"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="70"/><ColumnDefinition Width="70"/></Grid.ColumnDefinitions><TextBlock Grid.Column="0" Text="Kerberos Authentication Service (4768,4769,4771)" FontSize="11" VerticalAlignment="Center" ToolTip="Records all Kerberos ticket activity. Event 4768=TGT request (user logs on), 4769=Service ticket request (accessing a resource), 4771=Pre-authentication failed (wrong password via Kerberos). Essential for the Auth Audit feature in this tool. GPO path: Computer Configuration &gt; Policies &gt; Windows Settings &gt; Security Settings &gt; Advanced Audit Policy Configuration &gt; Account Logon &gt; Audit Kerberos Authentication Service"/><CheckBox x:Name="chkKerberosS" Grid.Column="1" HorizontalAlignment="Center" ToolTip="Audit Success"/><CheckBox x:Name="chkKerberosF" Grid.Column="2" HorizontalAlignment="Center" ToolTip="Audit Failure"/></Grid>
+              <Grid x:Name="rowCredVal"   Margin="4,1,0,1"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="70"/><ColumnDefinition Width="70"/></Grid.ColumnDefinitions><TextBlock Grid.Column="0" Text="Credential Validation / NTLM (4776,4777)" FontSize="11" VerticalAlignment="Center" ToolTip="Records NTLM (legacy) authentication attempts. 4776=Successful NTLM validation, 4777=Failed NTLM validation. Important for machines/apps that still use NTLM instead of Kerberos (older servers, local accounts, some apps). GPO: Advanced Audit Policy &gt; Account Logon &gt; Audit Credential Validation"/><CheckBox x:Name="chkCredValS" Grid.Column="1" HorizontalAlignment="Center"/><CheckBox x:Name="chkCredValF" Grid.Column="2" HorizontalAlignment="Center"/></Grid>
+              <!-- Logon/Logoff -->
+              <TextBlock Text="Logon / Logoff" FontSize="11" FontWeight="SemiBold" Foreground="#1E3A5F" Background="#EEF2F7" Padding="4,2" Margin="0,4,0,2"/>
+              <Grid Margin="4,1,0,1"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="70"/><ColumnDefinition Width="70"/></Grid.ColumnDefinitions><TextBlock Grid.Column="0" Text="Logon (4624, 4625)" FontSize="11" VerticalAlignment="Center" ToolTip="Records every logon event. 4624=Successful logon (includes logon type: 2=console, 3=network, 10=RDP, 7=unlock), 4625=Failed logon (includes failure reason). Most important events for security monitoring. GPO: Advanced Audit Policy &gt; Logon/Logoff &gt; Audit Logon"/><CheckBox x:Name="chkLogonS" Grid.Column="1" HorizontalAlignment="Center"/><CheckBox x:Name="chkLogonF" Grid.Column="2" HorizontalAlignment="Center"/></Grid>
+              <Grid Margin="4,1,0,1"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="70"/><ColumnDefinition Width="70"/></Grid.ColumnDefinitions><TextBlock Grid.Column="0" Text="Logoff (4634)" FontSize="11" VerticalAlignment="Center" ToolTip="Records session termination. Useful for calculating session duration. Lower value audit - success only recommended. GPO: Advanced Audit Policy &gt; Logon/Logoff &gt; Audit Logoff"/><CheckBox x:Name="chkLogoffS" Grid.Column="1" HorizontalAlignment="Center"/><CheckBox x:Name="chkLogoffF" Grid.Column="2" HorizontalAlignment="Center"/></Grid>
+              <Grid Margin="4,1,0,1"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="70"/><ColumnDefinition Width="70"/></Grid.ColumnDefinitions><TextBlock Grid.Column="0" Text="Account Lockout (4740)" FontSize="11" VerticalAlignment="Center" ToolTip="Records when a user account is locked out. Contains the computer name that caused the lockout (caller computer). Essential for diagnosing lockout storms. Enable Failure only. GPO: Advanced Audit Policy &gt; Logon/Logoff &gt; Audit Account Lockout"/><CheckBox x:Name="chkLockoutS" Grid.Column="1" HorizontalAlignment="Center"/><CheckBox x:Name="chkLockoutF" Grid.Column="2" HorizontalAlignment="Center"/></Grid>
+              <Grid Margin="4,1,0,1"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="70"/><ColumnDefinition Width="70"/></Grid.ColumnDefinitions><TextBlock Grid.Column="0" Text="Special Logon (4672)" FontSize="11" VerticalAlignment="Center" ToolTip="4672=Logon with admin-equivalent privileges (SeDebugPrivilege, SeTcbPrivilege etc). Fires for every admin logon. Essential for tracking who used admin rights. GPO: Advanced Audit Policy &gt; Logon/Logoff &gt; Special Logon"/><CheckBox x:Name="chkSpecLogonS" Grid.Column="1" HorizontalAlignment="Center"/><CheckBox x:Name="chkSpecLogonF" Grid.Column="2" HorizontalAlignment="Center"/></Grid>
+              <!-- Account Management -->
+              <TextBlock Text="Account Management" FontSize="11" FontWeight="SemiBold" Foreground="#1E3A5F" Background="#EEF2F7" Padding="4,2" Margin="0,4,0,2"/>
+              <Grid Margin="4,1,0,1"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="70"/><ColumnDefinition Width="70"/></Grid.ColumnDefinitions><TextBlock Grid.Column="0" Text="User Account Management (4720-4738)" FontSize="11" VerticalAlignment="Center" ToolTip="Records all changes to user accounts: 4720=Created, 4722=Enabled, 4723=Pwd change attempt, 4724=Pwd reset, 4725=Disabled, 4726=Deleted, 4738=Account changed. Compliance requirement for most security standards. GPO: Advanced Audit Policy &gt; Account Management &gt; Audit User Account Management"/><CheckBox x:Name="chkUserMgmtS" Grid.Column="1" HorizontalAlignment="Center"/><CheckBox x:Name="chkUserMgmtF" Grid.Column="2" HorizontalAlignment="Center"/></Grid>
+              <Grid Margin="4,1,0,1"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="70"/><ColumnDefinition Width="70"/></Grid.ColumnDefinitions><TextBlock Grid.Column="0" Text="Security Group Management (4727-4756)" FontSize="11" VerticalAlignment="Center" ToolTip="Records changes to security groups: member added (4728 global/4732 local/4756 universal), member removed (4729/4733/4757), group created/deleted. Critical for detecting privilege escalation. GPO: Advanced Audit Policy &gt; Account Management &gt; Audit Security Group Management"/><CheckBox x:Name="chkGroupMgmtS" Grid.Column="1" HorizontalAlignment="Center"/><CheckBox x:Name="chkGroupMgmtF" Grid.Column="2" HorizontalAlignment="Center"/></Grid>
+              <Grid Margin="4,1,0,1"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="70"/><ColumnDefinition Width="70"/></Grid.ColumnDefinitions><TextBlock Grid.Column="0" Text="Computer Account Management (4741-4743)" FontSize="11" VerticalAlignment="Center" ToolTip="Records computer account changes: 4741=Created, 4742=Changed, 4743=Deleted. Useful for detecting rogue computer accounts joining the domain. GPO: Advanced Audit Policy &gt; Account Management &gt; Audit Computer Account Management"/><CheckBox x:Name="chkCompMgmtS" Grid.Column="1" HorizontalAlignment="Center"/><CheckBox x:Name="chkCompMgmtF" Grid.Column="2" HorizontalAlignment="Center"/></Grid>
+              <!-- Object Access -->
+              <TextBlock Text="Object Access" FontSize="11" FontWeight="SemiBold" Foreground="#1E3A5F" Background="#EEF2F7" Padding="4,2" Margin="0,4,0,2"/>
+              <Grid Margin="4,1,0,1"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="70"/><ColumnDefinition Width="70"/></Grid.ColumnDefinitions><TextBlock Grid.Column="0" Text="File System (requires SACL - high volume)" FontSize="11" VerticalAlignment="Center" ToolTip="WARNING: Very high event volume. Requires System ACL (SACL) configured on each file/folder separately. Events: 4663=Object access attempt, 4656=Handle requested. Enable SACL: right-click folder &gt; Properties &gt; Security &gt; Advanced &gt; Auditing tab. GPO: Advanced Audit Policy &gt; Object Access &gt; File System"/><CheckBox x:Name="chkFileFS" Grid.Column="1" HorizontalAlignment="Center"/><CheckBox x:Name="chkFileFail" Grid.Column="2" HorizontalAlignment="Center"/></Grid>
+              <Grid Margin="4,1,0,1"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="70"/><ColumnDefinition Width="70"/></Grid.ColumnDefinitions><TextBlock Grid.Column="0" Text="File Share - Network share access (5140)" FontSize="11" VerticalAlignment="Center" ToolTip="Records access to network shares. 5140=A network share object was accessed, 5145=Share object access check (detailed). Useful for tracking who accesses shared folders. Less noisy than File System auditing. GPO: Advanced Audit Policy &gt; Object Access &gt; Audit File Share"/><CheckBox x:Name="chkShareS" Grid.Column="1" HorizontalAlignment="Center"/><CheckBox x:Name="chkShareF" Grid.Column="2" HorizontalAlignment="Center"/></Grid>
+              <Grid Margin="4,1,0,1"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="70"/><ColumnDefinition Width="70"/></Grid.ColumnDefinitions><TextBlock Grid.Column="0" Text="Directory Service Access (4662)" FontSize="11" VerticalAlignment="Center" ToolTip="Records access to Active Directory objects when SACL is configured on the AD object. 4662=Operation performed on AD object. Requires additional SACL configuration in ADSI Edit. High volume. GPO: Advanced Audit Policy &gt; DS Access &gt; Audit Directory Service Access"/><CheckBox x:Name="chkDSS" Grid.Column="1" HorizontalAlignment="Center"/><CheckBox x:Name="chkDSF" Grid.Column="2" HorizontalAlignment="Center"/></Grid>
+              <Grid Margin="4,1,0,1"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="70"/><ColumnDefinition Width="70"/></Grid.ColumnDefinitions><TextBlock Grid.Column="0" Text="Directory Service Changes (4720 in DS)" FontSize="11" VerticalAlignment="Center" ToolTip="Records attribute-level changes to AD objects (who changed what attribute, old value, new value). 4720/4738 in DS context. Essential for AD change auditing and compliance. GPO: Advanced Audit Policy &gt; DS Access &gt; Audit Directory Service Changes"/><CheckBox x:Name="chkDSChS" Grid.Column="1" HorizontalAlignment="Center"/><CheckBox x:Name="chkDSChF" Grid.Column="2" HorizontalAlignment="Center"/></Grid>
+              <!-- Policy Change -->
+              <TextBlock Text="Policy Change" FontSize="11" FontWeight="SemiBold" Foreground="#1E3A5F" Background="#EEF2F7" Padding="4,2" Margin="0,4,0,2"/>
+              <Grid Margin="4,1,0,1"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="70"/><ColumnDefinition Width="70"/></Grid.ColumnDefinitions><TextBlock Grid.Column="0" Text="Audit Policy Change (4719)" FontSize="11" VerticalAlignment="Center" ToolTip="Records changes to audit policies themselves. 4719=System audit policy was changed. Always enable this - if someone disables auditing, you need to know. GPO: Advanced Audit Policy &gt; Policy Change &gt; Audit Audit Policy Change"/><CheckBox x:Name="chkPolChS" Grid.Column="1" HorizontalAlignment="Center"/><CheckBox x:Name="chkPolChF" Grid.Column="2" HorizontalAlignment="Center"/></Grid>
+              <Grid Margin="4,1,0,1"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="70"/><ColumnDefinition Width="70"/></Grid.ColumnDefinitions><TextBlock Grid.Column="0" Text="Authentication Policy Change (4706,4707)" FontSize="11" VerticalAlignment="Center" ToolTip="Records changes to Kerberos policy, trust relationships, and authentication settings. 4706=New trust created, 4707=Trust removed. GPO: Advanced Audit Policy &gt; Policy Change &gt; Audit Authentication Policy Change"/><CheckBox x:Name="chkAuthPolS" Grid.Column="1" HorizontalAlignment="Center"/><CheckBox x:Name="chkAuthPolF" Grid.Column="2" HorizontalAlignment="Center"/></Grid>
+              <!-- Privilege Use -->
+              <TextBlock Text="Privilege Use" FontSize="11" FontWeight="SemiBold" Foreground="#1E3A5F" Background="#EEF2F7" Padding="4,2" Margin="0,4,0,2"/>
+              <Grid Margin="4,1,0,1"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="70"/><ColumnDefinition Width="70"/></Grid.ColumnDefinitions><TextBlock Grid.Column="0" Text="Sensitive Privilege Use (4672, 4673)" FontSize="11" VerticalAlignment="Center" ToolTip="Records use of sensitive Windows privileges: SeDebugPrivilege (debug any process), SeTcbPrivilege (act as OS), SeBackupPrivilege, etc. 4672=Assigned on logon, 4673=Sensitive privilege used. Can be noisy but important for detecting privilege abuse. GPO: Advanced Audit Policy &gt; Privilege Use &gt; Audit Sensitive Privilege Use"/><CheckBox x:Name="chkPrivS" Grid.Column="1" HorizontalAlignment="Center"/><CheckBox x:Name="chkPrivF" Grid.Column="2" HorizontalAlignment="Center"/></Grid>
+              <!-- System -->
+              <TextBlock Text="System" FontSize="11" FontWeight="SemiBold" Foreground="#1E3A5F" Background="#EEF2F7" Padding="4,2" Margin="0,4,0,2"/>
+              <Grid Margin="4,1,0,1"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="70"/><ColumnDefinition Width="70"/></Grid.ColumnDefinitions><TextBlock Grid.Column="0" Text="Security State Change (4608,4609)" FontSize="11" VerticalAlignment="Center" ToolTip="Records Windows security subsystem events: 4608=Windows starting up, 4609=Shutting down, 1102=Audit log cleared (critical - someone is covering tracks!). Enable Failure only for log cleared detection. GPO: Advanced Audit Policy &gt; System &gt; Audit Security State Change"/><CheckBox x:Name="chkSecStateS" Grid.Column="1" HorizontalAlignment="Center"/><CheckBox x:Name="chkSecStateF" Grid.Column="2" HorizontalAlignment="Center"/></Grid>
+              <Grid Margin="4,1,0,1"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="70"/><ColumnDefinition Width="70"/></Grid.ColumnDefinitions><TextBlock Grid.Column="0" Text="System Integrity (4612)" FontSize="11" VerticalAlignment="Center" ToolTip="Records events that violate audit system integrity: 4612=Audit queues full (events being lost), 4615=Invalid use of LPC. Useful for detecting audit log saturation. GPO: Advanced Audit Policy &gt; System &gt; Audit System Integrity"/><CheckBox x:Name="chkSysIntS" Grid.Column="1" HorizontalAlignment="Center"/><CheckBox x:Name="chkSysIntF" Grid.Column="2" HorizontalAlignment="Center"/></Grid>
+            </StackPanel>
+          </ScrollViewer>
+          <!-- GridSplitter -->
+          <GridSplitter Grid.Row="2" Height="4" HorizontalAlignment="Stretch" VerticalAlignment="Center" Background="#CCD3DC" ShowsPreview="True" ResizeBehavior="PreviousAndNext"/>
+          <!-- Output console -->
+          <TextBox Grid.Row="3" x:Name="txtAuditStatus" IsReadOnly="True" TextWrapping="NoWrap"
+                   FontSize="10" FontFamily="Consolas" Background="#1E1E1E" Foreground="#00FF00"
+                   VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
+                   BorderThickness="0" Padding="8"/>
+        </Grid>
+      </TabItem>
+    </TabControl>
+    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
       <Button x:Name="btnSettingsSave"   Content="Save"   Width="80" Height="28" Background="#1E6EB5" Foreground="White" BorderThickness="0" FontWeight="SemiBold" Cursor="Hand" Margin="0,0,8,0"/>
       <Button x:Name="btnSettingsCancel" Content="Cancel" Width="80" Height="28" BorderBrush="#CCC" BorderThickness="1" Cursor="Hand"/>
     </StackPanel>
-  </StackPanel>
+  </Grid>
 </Window>
-"@
+'@)
     $setR = [System.Xml.XmlNodeReader]::new($setXml)
     $setW = [Windows.Markup.XamlReader]::Load($setR)
     $setW.Owner = $Window
     $setW.FindName("chkSettingsLiveFilter").IsChecked = $Script:LiveFilterEnabled
-    $setW.FindName("btnSettingsCancel").Add_Click({ $setW.Close() })
-    $setW.FindName("btnSettingsSave").Add_Click({
-        $Script:LiveFilterEnabled = ($setW.FindName("chkSettingsLiveFilter").IsChecked -eq $true)
-        $setW.Close()
-        Show-Info "Settings saved. Some changes take effect after next data load."
+
+    # Store in Script scope for inner scriptblock access (PS5.1 closure workaround)
+    $Script:AuditSetW = $setW
+    $Script:AuditMap  = $auditMap
+    function F { param($n) $Script:AuditSetW.FindName($n) }
+
+    # Map: auditpol subcategory name -> {S=successCheckbox, F=failCheckbox}
+    $auditMap = @{
+        "Kerberos Authentication Service"  = @{S="chkKerberosS"; F="chkKerberosF"}
+        "Kerberos Service Ticket Operations" = @{S="chkKerberosS"; F="chkKerberosF"}
+        "Credential Validation"            = @{S="chkCredValS";  F="chkCredValF"}
+        "Logon"                            = @{S="chkLogonS";    F="chkLogonF"}
+        "Logoff"                           = @{S="chkLogoffS";   F="chkLogoffF"}
+        "Account Lockout"                  = @{S="chkLockoutS";  F="chkLockoutF"}
+        "Special Logon"                    = @{S="chkSpecLogonS";F="chkSpecLogonF"}
+        "User Account Management"          = @{S="chkUserMgmtS"; F="chkUserMgmtF"}
+        "Security Group Management"        = @{S="chkGroupMgmtS";F="chkGroupMgmtF"}
+        "Computer Account Management"      = @{S="chkCompMgmtS"; F="chkCompMgmtF"}
+        "File System"                      = @{S="chkFileFS";    F="chkFileFail"}
+        "File Share"                       = @{S="chkShareS";    F="chkShareF"}
+        "Directory Service Access"         = @{S="chkDSS";       F="chkDSF"}
+        "Directory Service Changes"        = @{S="chkDSChS";     F="chkDSChF"}
+        "Audit Policy Change"              = @{S="chkPolChS";    F="chkPolChF"}
+        "Authentication Policy Change"     = @{S="chkAuthPolS";  F="chkAuthPolF"}
+        "Sensitive Privilege Use"          = @{S="chkPrivS";     F="chkPrivF"}
+        "Security State Change"            = @{S="chkSecStateS"; F="chkSecStateF"}
+        "System Integrity"                 = @{S="chkSysIntS";   F="chkSysIntF"}
+    }
+
+    # Check Current Status - reads auditpol and ticks checkboxes
+    $Script:AuditSetW.FindName("btnCheckAudit").Add_Click({
+        $txtS = $Script:AuditSetW.FindName("txtAuditStatus")
+        $txtS.Text = "Reading auditpol..."
+        try {
+            $out = auditpol /get /category:* 2>&1
+            $rawText = $out -join "`n"
+            $txtS.Text = $rawText
+            # Parse and tick checkboxes
+            foreach ($line in $out) {
+                if ($line -match '^\s{2}(.+?)\s{2,}(Success and Failure|Success|Failure|No Auditing)\s*$') {
+                    $sub = $Matches[1].Trim(); $setting = $Matches[2].Trim()
+                    if ($auditMap.ContainsKey($sub)) {
+                        $m = $auditMap[$sub]
+                        $Script:AuditSetW.FindName($m.S).IsChecked = ($setting -match "Success")
+                        $Script:AuditSetW.FindName($m.F).IsChecked = ($setting -match "Failure")
+                    }
+                }
+            }
+        } catch { $Script:AuditSetW.FindName("txtAuditStatus").Text = "Error: $($_.Exception.Message)" }
+    })
+
+    # Select All Success / All Failure / Clear All
+    $Script:AuditSetW.FindName("btnSelectAllS").Add_Click({ foreach($n in $Script:AuditMap.Values){ $Script:AuditSetW.FindName($n.S).IsChecked=$true } })
+    $Script:AuditSetW.FindName("btnSelectAllF").Add_Click({ foreach($n in $Script:AuditMap.Values){ $Script:AuditSetW.FindName($n.F).IsChecked=$true } })
+    $Script:AuditSetW.FindName("btnClearAll").Add_Click({ foreach($n in $Script:AuditMap.Values){ $Script:AuditSetW.FindName($n.S).IsChecked=$false; $Script:AuditSetW.FindName($n.F).IsChecked=$false } })
+
+    # Apply via auditpol
+    $Script:AuditSetW.FindName("btnApplyAudit").Add_Click({
+        $txtS = $Script:AuditSetW.FindName("txtAuditStatus")
+        $log = [System.Text.StringBuilder]::new()
+        function AuditSet { param($sub,$suc,$fail)
+            $s=if($suc){"enable"}else{"disable"}; $f=if($fail){"enable"}else{"disable"}
+            try { auditpol /set /subcategory:"$sub" /success:$s /failure:$f 2>&1|Out-Null; [void]$log.AppendLine("OK: $sub (S=$s F=$f)") }
+            catch { [void]$log.AppendLine("ERR: $sub") }
+        }
+        foreach ($sub in $Script:AuditMap.Keys) {
+            $m = $Script:AuditMap[$sub]
+            AuditSet $sub ($Script:AuditSetW.FindName($m.S).IsChecked -eq $true) ($Script:AuditSetW.FindName($m.F).IsChecked -eq $true)
+        }
+        $txtS.Text = $log.ToString() + "`nDone. Run: gpupdate /force on all DCs."
+    })
+
+    $Script:AuditSetW.FindName("btnSettingsCancel").Add_Click({ $Script:AuditSetW.Close() })
+    $Script:AuditSetW.FindName("btnSettingsSave").Add_Click({
+        $Script:LiveFilterEnabled = (F("chkSettingsLiveFilter").IsChecked -eq $true)
+        $setW.Close(); Show-Info "Settings saved."
     })
     $setW.ShowDialog() | Out-Null
 })
+
+
+
 
 # ── LIVE FILTER (Users) ───────────────────────────────────────────────────────
 $txtUserLiveFilter.Add_TextChanged({
@@ -3137,6 +3880,7 @@ $ctxCopyRowG.Add_Click({
     $v = Get-GridRowValue -grid $gridGroups
     if ($v) { [System.Windows.Clipboard]::SetText($v) }
 })
+$ctxCompPing = B "ctxCompPing"; $ctxCompRDP = B "ctxCompRDP"
 $ctxCopyCellC.Add_Click({
     $v = Get-GridCellValue -grid $gridComputers
     if ($v) { [System.Windows.Clipboard]::SetText("$v") }
@@ -3145,14 +3889,118 @@ $ctxCopyRowC.Add_Click({
     $v = Get-GridRowValue -grid $gridComputers
     if ($v) { [System.Windows.Clipboard]::SetText($v) }
 })
+$ctxCompPing.Add_Click({
+    $sel = $gridComputers.SelectedItem
+    if (-not $sel) { return }
+    $t = if ($sel.DNSHostName) { $sel.DNSHostName } else { $sel.Name }
+    Start-Process "cmd" -ArgumentList "/k ping -t $t" -ErrorAction SilentlyContinue
+})
+$ctxCompRDP.Add_Click({
+    $sel = $gridComputers.SelectedItem
+    if (-not $sel) { return }
+    $t = if ($sel.DNSHostName) { $sel.DNSHostName } else { $sel.Name }
+    Start-Process "mstsc" -ArgumentList "/v:$t" -ErrorAction SilentlyContinue
+})
 
 # ── USER DETAIL PANEL ─────────────────────────────────────────────────────────
-$ctxUserDetail.Add_Click({
+$ctxUserDetail.Add_Click({ Show-UserDetails })
+$gridUsers.Add_MouseDoubleClick({
+    param($sender, $e)
+    if ($gridUsers.SelectedItem) { Show-UserDetails }
+})
+
+function Show-UserDetails {
     $sel = $gridUsers.SelectedItem
     if (-not $sel) { Show-Err "Select a user first."; return }
     if (-not (Ensure-ADModule)) { return }
     try {
         $u = Get-ADUser -Identity $sel.Username -Properties * -ErrorAction Stop
+        $uGroups = @(Get-ADPrincipalGroupMembership -Identity $u.SamAccountName -ErrorAction Stop | Sort-Object Name)
+        $Script:UserDetailUser   = $u
+        $Script:UserDetailGroups = $uGroups
+
+        [xml]$detXml = @'
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="User Details" Width="860" Height="620" MinWidth="700" MinHeight="500"
+        WindowStartupLocation="CenterOwner" ResizeMode="CanResize" Background="#F8F9FA">
+  <Grid Margin="12">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="*"/>
+      <RowDefinition Height="Auto"/>
+    </Grid.RowDefinitions>
+    <!-- Header -->
+    <TextBlock Grid.Row="0" x:Name="lblDetTitle" FontSize="15" FontWeight="Bold" Foreground="#1E3A5F" Margin="0,0,0,10"/>
+    <!-- Main content: Info + Groups -->
+    <Grid Grid.Row="1">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*"/>
+        <ColumnDefinition Width="4"/>
+        <ColumnDefinition Width="*"/>
+      </Grid.ColumnDefinitions>
+      <!-- Left: User Info -->
+      <Border Grid.Column="0" BorderBrush="#DDE1E7" BorderThickness="1" CornerRadius="4">
+        <TextBox x:Name="txtDetail" IsReadOnly="True" FontFamily="Consolas" FontSize="11"
+                 TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"
+                 Background="#1a1a2e" Foreground="#00e676" Padding="10" BorderThickness="0"/>
+      </Border>
+      <GridSplitter Grid.Column="1" Width="4" HorizontalAlignment="Center" VerticalAlignment="Stretch" Background="#CCD3DC" ShowsPreview="True"/>
+      <!-- Right: Group Membership -->
+      <Grid Grid.Column="2">
+        <Grid.RowDefinitions>
+          <RowDefinition Height="Auto"/>
+          <RowDefinition Height="*"/>
+          <RowDefinition Height="Auto"/>
+          <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <TextBlock Grid.Row="0" Text="Group Membership" FontSize="12" FontWeight="SemiBold" Foreground="#1E3A5F" Margin="4,0,0,6"/>
+        <Border Grid.Row="1" BorderBrush="#DDE1E7" BorderThickness="1" CornerRadius="4">
+          <ListBox x:Name="lstGroups" FontSize="12" BorderThickness="0"
+                   SelectionMode="Extended" ToolTip="Select one or more groups. Use Ctrl+Click for multiple."/>
+        </Border>
+        <!-- Add Group -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,8,0,4">
+          <TextBox x:Name="txtAddGroup" Width="160" Height="26" FontSize="11"
+                   VerticalContentAlignment="Center" Padding="6,0" BorderBrush="#CCC" BorderThickness="1"
+                   ToolTip="Type group name (partial OK) then click Add, or use Browse to search"/>
+          <Button x:Name="btnBrowseGroup" Content="Browse..." Width="70" Height="26"
+                  BorderBrush="#555" BorderThickness="1"
+                  FontSize="11" Cursor="Hand" Margin="4,0,0,0" ToolTip="Search and select a group from AD"/>
+          <Button x:Name="btnAddGroup" Content="Add" Width="60" Height="26"
+                  Background="#27AE60" Foreground="White" BorderThickness="0"
+                  FontWeight="SemiBold" Cursor="Hand" Margin="4,0,0,0" ToolTip="Add user to the group in the text box"/>
+        </StackPanel>
+        <Button Grid.Row="3" x:Name="btnRemoveGroup" Content="Remove from Selected Groups"
+                Height="28" Background="#E74C3C" Foreground="White" BorderThickness="0"
+                FontWeight="SemiBold" Cursor="Hand" ToolTip="Remove user from all selected groups in the list above"/>
+      </Grid>
+    </Grid>
+    <!-- Footer -->
+    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+      <Button x:Name="btnDetCopy"  Content="Copy Info" Width="90" Height="28" Background="#1E6EB5" Foreground="White" BorderThickness="0" FontWeight="SemiBold" Cursor="Hand" Margin="0,0,8,0"/>
+      <Button x:Name="btnDetClose" Content="Close" Width="80" Height="28" BorderBrush="#CCC" BorderThickness="1" Cursor="Hand"/>
+    </StackPanel>
+  </Grid>
+</Window>
+'@
+        $detR = [System.Xml.XmlNodeReader]::new($detXml)
+        $detW = [Windows.Markup.XamlReader]::Load($detR)
+        $detW.Owner = $Window
+
+        $lblTitle  = $detW.FindName("lblDetTitle")
+        $txtDet    = $detW.FindName("txtDetail")
+        $Script:UserDetailLstGrps = $detW.FindName("lstGroups")
+        $lstGrps = $Script:UserDetailLstGrps
+        $txtAddGrp = $detW.FindName("txtAddGroup")
+        $btnAdd      = $detW.FindName("btnAddGroup")
+        $btnBrowseGrp = $detW.FindName("btnBrowseGroup")
+        $btnRemove = $detW.FindName("btnRemoveGroup")
+
+        $lblTitle.Text = "User Details: $($u.SamAccountName)  ($($u.DisplayName))"
+
+        # Build info text
+        $dr = try { (Get-ADUser -Filter "Manager -eq '$($u.DistinguishedName)'" -EA Stop | Measure-Object).Count } catch { 0 }
         $info  = "Username    : $($u.SamAccountName)`n"
         $info += "Display     : $($u.DisplayName)`n"
         $info += "Email       : $($u.mail)`n"
@@ -3160,7 +4008,9 @@ $ctxUserDetail.Add_Click({
         $info += "Department  : $($u.Department)`n"
         $info += "Office      : $($u.Office)`n"
         $info += "Phone       : $($u.telephoneNumber)`n"
+        $info += "Mobile      : $($u.mobile)`n"
         $info += "Manager     : $(if($u.Manager){($u.Manager -split ',')[0] -replace '^CN=',''}else{''})`n"
+        $info += "Direct Rep. : $dr`n"
         $info += "Description : $($u.Description)`n"
         $info += "OU          : $($u.DistinguishedName -replace '^CN=[^,]+,','')`n"
         $info += "Enabled     : $($u.Enabled)`n"
@@ -3169,42 +4019,133 @@ $ctxUserDetail.Add_Click({
         $info += "Last Logon  : $($u.LastLogonDate)`n"
         $info += "Pwd LastSet : $($u.PasswordLastSet)`n"
         $info += "Pwd Never   : $($u.PasswordNeverExpires)`n"
-        $dr = try { (Get-ADUser -Filter "Manager -eq '$($u.DistinguishedName)'" -ErrorAction Stop | Measure-Object).Count } catch { 0 }
-        $info += "Direct Rep. : $dr"
-        $detTitle = "User Details: $($u.SamAccountName)"
-        [xml]$detXml = @'
+        $info += "Pwd Expires : $($u.AccountExpirationDate)`n"
+        $info += "SID         : $($u.SID)`n"
+        $info += "DN          : $($u.DistinguishedName)"
+        $txtDet.Text = $info
+
+        # Populate groups
+        $lstGrps.Items.Clear()
+        foreach ($g in $uGroups) { [void]$lstGrps.Items.Add($g.Name) }
+
+        # Add to group
+        $btnAdd.Add_Click({
+            $gname = $txtAddGrp.Text.Trim()
+            if (-not $gname) { return }
+            try {
+                $grp = Get-ADGroup -Filter "Name -like '$gname'" -ErrorAction Stop | Select-Object -First 1
+                if (-not $grp) { [System.Windows.MessageBox]::Show("Group '$gname' not found.","AD Manager","OK","Warning")|Out-Null; return }
+                Add-ADGroupMember -Identity $grp -Members $Script:UserDetailUser.SamAccountName -ErrorAction Stop
+                if (-not ($lstGrps.Items -contains $grp.Name)) { [void]$lstGrps.Items.Add($grp.Name) }
+                $txtAddGrp.Text = ""
+                [System.Windows.MessageBox]::Show("Added to $($grp.Name).","AD Manager","OK","Information")|Out-Null
+            } catch { [System.Windows.MessageBox]::Show("Error: $($_.Exception.Message)","Error","OK","Error")|Out-Null }
+        })
+
+        # Browse groups dialog
+        $btnBrowseGrp.Add_Click({
+            # Search dialog
+            [xml]$browseXml = [xml]([string]@'
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        Title="User Details" Width="500" Height="520"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Browse Groups" Width="480" Height="400" MinWidth="350" MinHeight="300"
         WindowStartupLocation="CenterOwner" ResizeMode="CanResize" Background="#F8F9FA">
-  <Grid Margin="16">
+  <Grid Margin="12">
     <Grid.RowDefinitions>
+      <RowDefinition Height="Auto"/>
       <RowDefinition Height="*"/>
       <RowDefinition Height="Auto"/>
     </Grid.RowDefinitions>
-    <TextBox x:Name="txtDetail" Grid.Row="0" IsReadOnly="True" FontFamily="Consolas" FontSize="12"
-             TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"
-             Background="#1a1a2e" Foreground="#00e676" Padding="12" BorderThickness="0"/>
-    <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
-      <Button x:Name="btnDetCopy"  Content="Copy all" Width="90" Height="28"
+    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
+      <TextBox x:Name="txtGrpSearch" Width="280" Height="28" FontSize="12"
+               VerticalContentAlignment="Center" Padding="6,0" BorderBrush="#CCC" BorderThickness="1"
+               ToolTip="Type group name (partial) and press Enter or click Search"/>
+      <Button x:Name="btnGrpSearch" Content="Search" Width="80" Height="28"
               Background="#1E6EB5" Foreground="White" BorderThickness="0"
+              FontWeight="SemiBold" Cursor="Hand" Margin="6,0,0,0"/>
+    </StackPanel>
+    <ListBox x:Name="lstGrpResults" Grid.Row="1" FontSize="12"
+             BorderBrush="#DDE1E7" BorderThickness="1" SelectionMode="Extended"
+             ToolTip="Use Ctrl+Click or Shift+Click to select multiple groups"/>
+    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
+      <Button x:Name="btnGrpSelect" Content="Select" Width="80" Height="28"
+              Background="#27AE60" Foreground="White" BorderThickness="0"
               FontWeight="SemiBold" Cursor="Hand" Margin="0,0,8,0"/>
-      <Button x:Name="btnDetClose" Content="Close" Width="80" Height="28"
+      <Button x:Name="btnGrpCancel" Content="Cancel" Width="80" Height="28"
               BorderBrush="#CCC" BorderThickness="1" Cursor="Hand"/>
     </StackPanel>
   </Grid>
 </Window>
-'@
-        $detR = [System.Xml.XmlNodeReader]::new($detXml)
-        $detW = [Windows.Markup.XamlReader]::Load($detR)
-        $detW.Title  = $detTitle
-        $detW.Owner  = $Window
-        $detW.FindName("txtDetail").Text = $info
-        $infoCopy = $info
-        $detW.FindName("btnDetCopy").Add_Click({ [System.Windows.Clipboard]::SetText($infoCopy) })
+'@)
+            $bR = [System.Xml.XmlNodeReader]::new($browseXml)
+            $bW = [Windows.Markup.XamlReader]::Load($bR)
+            $bW.Owner = $detW
+            $bSearch = $bW.FindName("txtGrpSearch")
+            $bList   = $bW.FindName("lstGrpResults")
+            $Script:BrowseSelectedGroups = @()
+
+            $Script:BrowseSearchCtrl = $bSearch
+            $Script:BrowseListCtrl   = $bList
+            $Script:BrowseDoSearch = {
+                $q = $Script:BrowseSearchCtrl.Text.Trim()
+                $Script:BrowseListCtrl.Items.Clear()
+                try {
+                    $filter = if ($q) { "Name -like '*$q*'" } else { "Name -like '*'" }
+                    $groups = Get-ADGroup -Filter $filter -ResultSetSize 500 -EA Stop | Sort-Object Name
+                    foreach ($g in $groups) { [void]$Script:BrowseListCtrl.Items.Add($g.Name) }
+                    if ($Script:BrowseListCtrl.Items.Count -eq 0) { [void]$Script:BrowseListCtrl.Items.Add("(no results)") }
+                } catch { [void]$Script:BrowseListCtrl.Items.Add("Error: $($_.Exception.Message)") }
+            }
+            # Load all groups immediately on open
+            & $Script:BrowseDoSearch
+            $bSearch.Add_KeyDown({ param($s2,$e2) if($e2.Key -eq "Return"){ & $Script:BrowseDoSearch } })
+            $bW.FindName("btnGrpSearch").Add_Click({ & $Script:BrowseDoSearch })
+            $bList.Add_MouseDoubleClick({
+                $sel = @($bList.SelectedItems | Where-Object { $_ -notlike '(*' })
+                if ($sel.Count -gt 0) { $Script:BrowseSelectedGroups = $sel; $bW.Close() }
+            })
+            $bW.FindName("btnGrpSelect").Add_Click({
+                $sel = @($bList.SelectedItems | Where-Object { $_ -notlike '(*' })
+                if ($sel.Count -gt 0) { $Script:BrowseSelectedGroups = $sel; $bW.Close() }
+            })
+            $bW.FindName("btnGrpCancel").Add_Click({ $bW.Close() })
+            $bW.ShowDialog() | Out-Null
+            if ($Script:BrowseSelectedGroups -and $Script:BrowseSelectedGroups.Count -gt 0) {
+                # Add each selected group
+                foreach ($gname in $Script:BrowseSelectedGroups) {
+                    try {
+                        $grp = Get-ADGroup -Identity $gname -ErrorAction Stop
+                        Add-ADGroupMember -Identity $grp -Members $Script:UserDetailUser.SamAccountName -ErrorAction Stop
+                        if (-not ($Script:UserDetailLstGrps.Items -contains $grp.Name)) { [void]$Script:UserDetailLstGrps.Items.Add($grp.Name) }
+                    } catch { [System.Windows.MessageBox]::Show("Error adding to $gname`: $($_.Exception.Message)","Error","OK","Error")|Out-Null }
+                }
+                [System.Windows.MessageBox]::Show("Added to $($Script:BrowseSelectedGroups.Count) group(s).","Done","OK","Information")|Out-Null
+            }
+        })
+
+        # Remove from groups
+        $btnRemove.Add_Click({
+            $selected = @($Script:UserDetailLstGrps.SelectedItems)
+            if ($selected.Count -eq 0) { [System.Windows.MessageBox]::Show("Select one or more groups first.","AD Manager","OK","Warning")|Out-Null; return }
+            $confirm = [System.Windows.MessageBox]::Show("Remove $($Script:UserDetailUser.SamAccountName) from $($selected.Count) group(s)?`n`n$($selected -join ', ')","Confirm","YesNo","Warning")
+            if ($confirm -ne "Yes") { return }
+            $errors = @()
+            foreach ($gname in $selected) {
+                try {
+                    Remove-ADGroupMember -Identity $gname -Members $Script:UserDetailUser.SamAccountName -Confirm:$false -ErrorAction Stop
+                    [void]$Script:UserDetailLstGrps.Items.Remove($gname)
+                } catch { $errors += "$gname`: $($_.Exception.Message)" }
+            }
+            if ($errors) { [System.Windows.MessageBox]::Show("Errors:`n$($errors -join "`n")","Errors","OK","Warning")|Out-Null }
+            else { [System.Windows.MessageBox]::Show("Removed from $($selected.Count) group(s).","Done","OK","Information")|Out-Null }
+        })
+
+        $detW.FindName("btnDetCopy").Add_Click({ [System.Windows.Clipboard]::SetText($info) })
         $detW.FindName("btnDetClose").Add_Click({ $detW.Close() })
         $detW.ShowDialog() | Out-Null
     } catch { Show-Err "Error loading user details: $($_.Exception.Message)" }
-})
+}
+
 
 # ── HEATMAP IN USERS TAB ──────────────────────────────────────────────────────
 function Load-UsersHeatmap {
@@ -3457,9 +4398,7 @@ function Get-NetComputers {
         Set-Status "Loading computers from AD..." 20
         $all = Get-ADComputer -Filter { Enabled -eq $true } -Properties DNSHostName,OperatingSystem,LastLogonDate,IPv4Address | Sort-Object Name
         $Script:NetComputers = @($all)
-        $sp = $lstNetComputers
-        if ($sp.PSObject.Properties.Name -contains 'Items') { $sp.Items.Clear() }
-        $itemsHost = New-Object System.Windows.Controls.StackPanel
+        $lstNetComputers.Children.Clear()
         foreach ($comp in $all) {
             $chk = New-Object System.Windows.Controls.CheckBox
             $chk.Content = "  $($comp.Name)  [$($comp.OperatingSystem)]"
@@ -3468,9 +4407,8 @@ function Get-NetComputers {
             $chk.FontSize = 12
             $chk.Margin = [System.Windows.Thickness]"2,1,2,1"
             $chk.ToolTip = "IP: $($comp.IPv4Address)   DNS: $($comp.DNSHostName)"
-            [void]$itemsHost.Children.Add($chk)
+            [void]$lstNetComputers.Children.Add($chk)
         }
-        $lstNetComputers.Content = $itemsHost
         $borderNetComputers.Visibility = [System.Windows.Visibility]::Visible
         $lblNetCompCount.Text = "Computers from AD: $($all.Count) total - check to include in scan"
         Set-Status "Loaded $($all.Count) computers." 100
@@ -3478,133 +4416,145 @@ function Get-NetComputers {
 }
 
 # ── NET STATUS: Parallel scan with RunspacePool ───────────────────────────────
+
+# ── NET STATUS: Sequential scan in single background runspace ─────────────────
+
 function Start-NetScan {
+    if (-not (Ensure-ADModule)) { return }
     $Script:NetScanCancel = $false
     $btnNetScan.IsEnabled = $false
     $btnNetStop.IsEnabled = $true
     $btnNetStop.Visibility = [System.Windows.Visibility]::Visible
 
-    $timeout = 30;  [int]::TryParse($txtNetTimeout.Text.Trim(), [ref]$timeout) | Out-Null
-    $retries = 0;   [int]::TryParse($txtNetRetries.Text.Trim(), [ref]$retries) | Out-Null
-    $threads = 20;  [int]::TryParse($txtNetThreads.Text.Trim(), [ref]$threads) | Out-Null
+    $timeout = 30; [int]::TryParse($txtNetTimeout.Text.Trim(), [ref]$timeout) | Out-Null
+    $retries = 0;  [int]::TryParse($txtNetRetries.Text.Trim(), [ref]$retries) | Out-Null
+    $threads = 20; [int]::TryParse($txtNetThreads.Text.Trim(), [ref]$threads) | Out-Null
     $threads = [math]::Max(1, [math]::Min($threads, 50))
     $onlineOnly = ($chkNetOnlineOnly.IsChecked -eq $true)
     $useWMI     = ($chkNetWMI.IsChecked        -eq $true)
     $usePSR     = ($chkNetPSRemoting.IsChecked -eq $true)
     $useRemReg  = ($chkNetRemoteReg.IsChecked  -eq $true)
+    $discMethod = switch($cmbNetMethod.SelectedIndex){0{"Ping"} 1{"TCP445"} 2{"TCP88"} 3{"TCP389"} 4{"TCP3389"} 5{"Multi"} default{"Multi"}}
 
-    # Get selected computers from list, or all from AD if list not loaded
     $selectedComps = @()
-    $panel = if($lstNetComputers.Content){$lstNetComputers.Content}else{$null}
-    if ($panel -and $panel.Children.Count -gt 0) {
-        foreach ($chk in $panel.Children) {
+    if ($lstNetComputers.Children.Count -gt 0) {
+        foreach ($chk in $lstNetComputers.Children) {
             if ($chk.IsChecked -eq $true) { $selectedComps += $chk.Tag }
         }
     }
     if ($selectedComps.Count -eq 0) {
         if ($Script:NetComputers.Count -gt 0) { $selectedComps = $Script:NetComputers }
-        else {
-            try { $selectedComps = @(Get-ADComputer -Filter { Enabled -eq $true } -Properties DNSHostName,OperatingSystem,LastLogonDate,IPv4Address | Sort-Object Name) } catch { $selectedComps = @() }
-        }
+        else { try { $selectedComps = @(Get-ADComputer -Filter { Enabled -eq $true } -Properties DNSHostName,OperatingSystem,LastLogonDate,IPv4Address | Sort-Object Name) } catch {} }
     }
 
-    $total = $selectedComps.Count
-    $lblNetProgress.Text = "Preparing $total computers..."
+    # Convert to plain hashtables - safe across runspace boundaries
+    $__comps = @($selectedComps | ForEach-Object {
+        @{ Name=[string]$_.Name; DNS=if($_.DNSHostName){[string]$_.DNSHostName}else{[string]$_.Name}
+           OS=if($_.OperatingSystem){[string]$_.OperatingSystem}else{''}
+           LL=$_.LastLogonDate; IP=if($_.IPv4Address){[string]$_.IPv4Address}else{''} }
+    })
 
-    $__grid = $gridNetStatus; $__lbl = $lblNetProgress; $__cnt = $lblNetCount
-    $__btnStart = $btnNetScan; $__btnStop = $btnNetStop
-    $__cancelRef = [ref]$Script:NetScanCancel
-    $__pb = $Global:pbMain
-    $__comps = $selectedComps
-    $__timeout = [math]::Max(10, [math]::Min($timeout, 10000))
-    $__retries = [math]::Max(0, [math]::Min($retries, 5))
-    $__threads = $threads
-    $__onlineOnly = $onlineOnly; $__useWMI = $useWMI; $__usePSR = $usePSR; $__useRemReg = $useRemReg
+    $__grid=$gridNetStatus;$__lbl=$lblNetProgress;$__cnt=$lblNetCount
+    $__btnStart=$btnNetScan;$__btnStop=$btnNetStop
+    $__cancelRef=[ref]$Script:NetScanCancel;$__pb=$Global:pbMain
+    $__timeout=[math]::Max(10,[math]::Min($timeout,10000))
+    $__retries=[math]::Max(0,[math]::Min($retries,5))
+    $__threads=$threads;$__onlineOnly=$onlineOnly
+    $__useWMI=$useWMI;$__usePSR=$usePSR;$__useRemReg=$useRemReg;$__discMethod=$discMethod
 
-    # Single worker scriptblock - runs per computer in RunspacePool
+    # Worker script (per computer) - runs in RunspacePool thread
     $workerStr = @'
-param($comp,$timeout,$retries,$useWMI,$usePSR,$useRemReg)
+param($comp,$timeout,$retries,$useWMI,$usePSR,$useRemReg,$discMethod)
 function ping1 { param($t,$ms,$r) for($i=0;$i -le $r;$i++){try{$x=(New-Object System.Net.NetworkInformation.Ping).Send($t,$ms);if($x.Status -eq 'Success'){return $x}}catch{}};return $null }
-$nm=$comp.Name
-$dn=if($comp.DNSHostName){$comp.DNSHostName}else{$comp.Name}
-$reply=ping1 $dn $timeout $retries
-if(-not $reply){$reply=ping1 $nm $timeout $retries}
-$online=($null -ne $reply)
-$ip=if($reply){$reply.Address.ToString()}elseif($comp.IPv4Address){$comp.IPv4Address}else{''}
-$rtt=if($reply){"$($reply.RoundtripTime) ms"}else{''}
-$row=[ordered]@{Status=if($online){'Online'}else{'Offline'};Name=$nm;IP=$ip;RTT=$rtt;OS=$comp.OperatingSystem;DNSHost=$dn;LastLogon=$comp.LastLogonDate;LastUserLogon='';Uptime='';FreeRAM='';FreeDisk=''}
+function tcpport { param($t,$port,$ms) try{$tc=New-Object System.Net.Sockets.TcpClient;$ar=$tc.BeginConnect($t,$port,$null,$null);$ok=$ar.AsyncWaitHandle.WaitOne($ms,$false);$tc.Close();return $ok}catch{return $false} }
+$nm=$comp.Name;$dn=$comp.DNS
+$reply=$null;$online=$false;$ip=$comp.IP;$rtt=''
+$tryPing=($discMethod -eq 'Ping' -or $discMethod -eq 'Multi')
+if($tryPing){
+    $reply=ping1 $dn $timeout $retries;if(-not $reply){$reply=ping1 $nm $timeout $retries}
+    if($reply){$online=$true;$ip=$reply.Address.ToString();$rtt="$($reply.RoundtripTime) ms"}
+}
+if(-not $online -and $discMethod -ne 'Ping'){
+    $ports=switch($discMethod){'TCP445'{@(445)}'TCP88'{@(88)}'TCP389'{@(389)}'TCP3389'{@(3389)}'Multi'{@(445,88,389,3389)}default{@(445)}}
+    foreach($p in $ports){$ok=tcpport $dn $p $timeout;if(-not $ok){$ok=tcpport $nm $p $timeout};if($ok){$online=$true;$rtt="TCP $p OK";break}}
+}
+$row=[ordered]@{Status=if($online){'Online'}else{'Offline'};Name=$nm;IP=$ip;RTT=$rtt;Port445='';Port88='';Port389='';OS=$comp.OS;LastLogon=$comp.LL;LastUserLogon='';Uptime='';FreeRAM='';FreeDisk='';'FreeDisk%'='';DNSHost=$dn}
 if($online){
+    $row['Port445']=if(tcpport $dn 445 500){'Open'}elseif(tcpport $nm 445 500){'Open'}else{''}
+    $row['Port88'] =if(tcpport $dn 88  300){'Open'}elseif(tcpport $nm 88  300){'Open'}else{''}
+    $row['Port389']=if(tcpport $dn 389 300){'Open'}elseif(tcpport $nm 389 300){'Open'}else{''}
     if($useRemReg){try{$reg=[Microsoft.Win32.RegistryKey]::OpenRemoteBaseKey('LocalMachine',$nm);$k=$reg.OpenSubKey('SOFTWARE\Microsoft\Windows\CurrentVersion\Authentication\LogonUI');if($k){$lu=$k.GetValue('LastLoggedOnUser');if($lu){$row['LastUserLogon']=$lu -replace '^.*\\',''};$k.Close()};$reg.Close()}catch{}}
-    if($useWMI){try{$o=Get-CimInstance Win32_OperatingSystem -ComputerName $nm -EA Stop;$row['Uptime']=if($o.LastBootUpTime){"$([math]::Round(((Get-Date)-$o.LastBootUpTime).TotalDays,1))d"}else{''};$row['FreeRAM']="$([math]::Round($o.FreePhysicalMemory/1MB,1)) / $([math]::Round($o.TotalVisibleMemorySize/1MB,1)) GB";$dk=Get-CimInstance Win32_LogicalDisk -Filter 'DriveType=3' -ComputerName $nm -EA Stop;$row['FreeDisk']=($dk|%{"$($_.DeviceID) $([math]::Round($_.FreeSpace/1GB,1))/$([math]::Round($_.Size/1GB,1))GB"})-join'  ';if(-not $row['LastUserLogon']){try{$cs=Get-CimInstance Win32_ComputerSystem -ComputerName $nm -EA Stop;if($cs.UserName){$row['LastUserLogon']=$cs.UserName -replace '^.*\\',''}}catch{}}}catch{$row['FreeRAM']='WMI err';$row['FreeDisk']='WMI err'}}
-    if($usePSR -and(-not $useWMI -or $row['FreeRAM'] -eq 'WMI err')){try{$d=Invoke-Command -ComputerName $nm -EA Stop -ScriptBlock{$o=Get-CimInstance Win32_OperatingSystem;$dk=Get-CimInstance Win32_LogicalDisk -Filter 'DriveType=3';$lu=(Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Authentication\LogonUI' -EA SilentlyContinue).LastLoggedOnUser;@{Up=if($o.LastBootUpTime){[math]::Round(((Get-Date)-$o.LastBootUpTime).TotalDays,1)}else{0};Fr=[math]::Round($o.FreePhysicalMemory/1MB,1);Tot=[math]::Round($o.TotalVisibleMemorySize/1MB,1);Dk=($dk|%{"$($_.DeviceID) $([math]::Round($_.FreeSpace/1GB,1))/$([math]::Round($_.Size/1GB,1))GB"})-join'  ';Lu=$lu}};$row['Uptime']="$($d.Up)d";$row['FreeRAM']="$($d.Fr) / $($d.Tot) GB";$row['FreeDisk']=$d.Dk;if(-not $row['LastUserLogon'] -and $d.Lu){$row['LastUserLogon']=$d.Lu -replace '^.*\\',''}}catch{if($row['FreeRAM'] -eq 'WMI err'){$row['FreeRAM']='PSR err'}}}
+    if($useWMI){try{$o=Get-CimInstance Win32_OperatingSystem -ComputerName $nm -EA Stop;$row['Uptime']=if($o.LastBootUpTime){"$([math]::Round(((Get-Date)-$o.LastBootUpTime).TotalDays,1))d"}else{''};$row['FreeRAM']="$([math]::Round($o.FreePhysicalMemory/1MB,1)) / $([math]::Round($o.TotalVisibleMemorySize/1MB,1)) GB";$dk=Get-CimInstance Win32_LogicalDisk -Filter 'DriveType=3' -ComputerName $nm -EA Stop;$row['FreeDisk']=($dk|%{"$($_.DeviceID) $([math]::Round($_.FreeSpace/1GB,1))/$([math]::Round($_.Size/1GB,1))GB"})-join'  ';$row['FreeDisk%']=($dk|Where-Object{$_.Size -gt 0}|%{"$($_.DeviceID) $([math]::Round((1-$_.FreeSpace/$_.Size)*100,0))%"})-join' ';if(-not $row['LastUserLogon']){try{$cs=Get-CimInstance Win32_ComputerSystem -ComputerName $nm -EA Stop;if($cs.UserName){$row['LastUserLogon']=$cs.UserName -replace '^.*\\',''}}catch{}}}catch{$row['FreeRAM']='WMI err';$row['FreeDisk']='WMI err'}}
+    if($usePSR -and(-not $useWMI -or $row['FreeRAM'] -eq 'WMI err')){try{$d=Invoke-Command -ComputerName $nm -EA Stop -ScriptBlock{$o=Get-CimInstance Win32_OperatingSystem;$dk=Get-CimInstance Win32_LogicalDisk -Filter 'DriveType=3';$lu=(Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Authentication\LogonUI' -EA SilentlyContinue).LastLoggedOnUser;@{Up=if($o.LastBootUpTime){[math]::Round(((Get-Date)-$o.LastBootUpTime).TotalDays,1)}else{0};Fr=[math]::Round($o.FreePhysicalMemory/1MB,1);Tot=[math]::Round($o.TotalVisibleMemorySize/1MB,1);Dk=($dk|%{"$($_.DeviceID) $([math]::Round($_.FreeSpace/1GB,1))/$([math]::Round($_.Size/1GB,1))GB"})-join'  ';DkP=($dk|Where-Object{$_.Size -gt 0}|%{"$($_.DeviceID) $([math]::Round((1-$_.FreeSpace/$_.Size)*100,0))%"})-join' ';Lu=$lu}};$row['Uptime']="$($d.Up)d";$row['FreeRAM']="$($d.Fr) / $($d.Tot) GB";$row['FreeDisk']=$d.Dk;if($d.DkP){$row['FreeDisk%']=$d.DkP};if(-not $row['LastUserLogon'] -and $d.Lu){$row['LastUserLogon']=$d.Lu -replace '^.*\\',''}}catch{if($row['FreeRAM'] -eq 'WMI err'){$row['FreeRAM']='PSR err'}}}
 }
 return [PSCustomObject]$row
 '@
 
-    $__workerBlock = [scriptblock]::Create($workerStr)
-    $__totalRef = $total
-
-    # Orchestrator runspace
+    # Orchestrator - manages RunspacePool (MTA compatible)
     $orchStr = @'
-param($grid,$lbl,$cnt,$btnStart,$btnStop,$cancelRef,$pb,$comps,$timeout,$retries,$threads,$onlineOnly,$useWMI,$usePSR,$useRemReg,$workerBlock)
+param($grid,$lbl,$cnt,$btnStart,$btnStop,$cancelRef,$pb,$comps,$timeout,$retries,$threads,$onlineOnly,$useWMI,$usePSR,$useRemReg,$discMethod,$workerStr)
 function ui{param($ctrl,$sb)try{$ctrl.Dispatcher.Invoke([System.Action]$sb)}catch{}}
-
-$pool=[System.Management.Automation.Runspaces.RunspaceFactory]::CreateRunspacePool(1,$threads)
+$iss=[System.Management.Automation.Runspaces.InitialSessionState]::CreateDefault()
+$pool=[System.Management.Automation.Runspaces.RunspaceFactory]::CreateRunspacePool(1,$threads,$iss,$Host)
+$pool.ApartmentState='MTA'
 $pool.Open()
-
 $jobs=[System.Collections.Generic.List[hashtable]]::new()
 foreach($c in $comps){
     if($cancelRef.Value){break}
     $ps=[System.Management.Automation.PowerShell]::Create()
     $ps.RunspacePool=$pool
-    [void]$ps.AddScript($workerBlock).AddArgument($c).AddArgument($timeout).AddArgument($retries).AddArgument($useWMI).AddArgument($usePSR).AddArgument($useRemReg)
+    [void]$ps.AddScript($workerStr).AddArgument($c).AddArgument($timeout).AddArgument($retries).AddArgument($useWMI).AddArgument($usePSR).AddArgument($useRemReg).AddArgument($discMethod)
     [void]$jobs.Add(@{PS=$ps;Handle=$ps.BeginInvoke();Name=$c.Name})
 }
-
 $total=$jobs.Count
 $results=[System.Collections.Generic.List[object]]::new()
 $done=0
 while($done -lt $jobs.Count){
     if($cancelRef.Value){break}
-    $finished=@($jobs|Where-Object{$_.Handle.IsCompleted})
+    $finished=@($jobs|Where-Object{$_.Handle.IsCompleted -eq $true})
     foreach($j in $finished){
-        try{$r=$j.PS.EndInvoke($j.Handle);if($r){if(-not $onlineOnly -or $r.Status -eq 'Online'){[void]$results.Add($r[0])}};$j.PS.Dispose()}catch{}
-        [void]$jobs.Remove($j);$done++
+        try{
+            $r=$j.PS.EndInvoke($j.Handle)
+            if($r -and $r.Count -gt 0 -and $r[0]){
+                if(-not $onlineOnly -or $r[0].Status -eq 'Online'){[void]$results.Add($r[0])}
+            }
+        }catch{}
+        $j.PS.Dispose()
+        [void]$jobs.Remove($j)
+        $done++
         $pct=[int](($done/$total)*100)
         $snap=[object[]]@($results|%{$_})
         ui $lbl {$lbl.Text="[$done/$total] ($pct%) complete..."}
         try{ui $pb {$pb.Value=$pct}}catch{}
         ui $grid {$grid.ItemsSource=$snap}
     }
-    if($finished.Count -eq 0){Start-Sleep -Milliseconds 200}
+    if($finished.Count -eq 0){Start-Sleep -Milliseconds 100}
 }
 foreach($j in $jobs){try{$j.PS.EndInvoke($j.Handle)}catch{};$j.PS.Dispose()}
 $pool.Close();$pool.Dispose()
-
 $all=[object[]]@($results|Sort-Object Name)
 $onC=($results|Where-Object{$_.Status -eq 'Online'}).Count
 $offC=($results|Where-Object{$_.Status -eq 'Offline'}).Count
 ui $grid    {$grid.ItemsSource=$all}
 ui $cnt     {$cnt.Text="Online: $onC  |  Offline: $offC  |  Total: $($results.Count)"}
 ui $lbl     {$lbl.Text=if($cancelRef.Value){'Scan stopped.'}else{"Scan complete. Online:$onC Offline:$offC"}}
-try{ui $pb {$pb.Value=100}}catch{}
+try{ui $pb  {$pb.Value=100}}catch{}
 ui $btnStart{$btnStart.IsEnabled=$true}
 ui $btnStop {$btnStop.Visibility=[System.Windows.Visibility]::Collapsed;$btnStop.IsEnabled=$true}
 '@
-    $orchBlock = [scriptblock]::Create($orchStr)
-    $rs = [System.Management.Automation.Runspaces.RunspaceFactory]::CreateRunspace()
-    $rs.ApartmentState = "STA"; $rs.ThreadOptions = "ReuseThread"; $rs.Open()
-    $ps2 = [System.Management.Automation.PowerShell]::Create()
-    $ps2.Runspace = $rs
-    [void]$ps2.AddScript($orchBlock).AddArgument($__grid).AddArgument($__lbl).AddArgument($__cnt).AddArgument($__btnStart).AddArgument($__btnStop).AddArgument($__cancelRef).AddArgument($__pb).AddArgument($__comps).AddArgument($__timeout).AddArgument($__retries).AddArgument($__threads).AddArgument($__onlineOnly).AddArgument($__useWMI).AddArgument($__usePSR).AddArgument($__useRemReg).AddArgument($__workerBlock)
-    $handle = $ps2.BeginInvoke()
-    $tmr = New-Object System.Windows.Threading.DispatcherTimer
-    $tmr.Interval = [TimeSpan]::FromMilliseconds(500)
+    $rs=[System.Management.Automation.Runspaces.RunspaceFactory]::CreateRunspace()
+    $rs.ApartmentState='STA';$rs.ThreadOptions='ReuseThread';$rs.Open()
+    $ps2=[System.Management.Automation.PowerShell]::Create()
+    $ps2.Runspace=$rs
+    [void]$ps2.AddScript($orchStr).AddArgument($__grid).AddArgument($__lbl).AddArgument($__cnt).AddArgument($__btnStart).AddArgument($__btnStop).AddArgument($__cancelRef).AddArgument($__pb).AddArgument($__comps).AddArgument($__timeout).AddArgument($__retries).AddArgument($__threads).AddArgument($__onlineOnly).AddArgument($__useWMI).AddArgument($__usePSR).AddArgument($__useRemReg).AddArgument($__discMethod).AddArgument($workerStr)
+    $handle=$ps2.BeginInvoke()
+    $tmr=New-Object System.Windows.Threading.DispatcherTimer
+    $tmr.Interval=[TimeSpan]::FromMilliseconds(500)
     $tmr.Add_Tick({
-        if ($handle.IsCompleted) {
+        if($handle.IsCompleted){
             $tmr.Stop()
-            try { foreach($e in $ps2.Streams.Error){Write-Out "NetScan ERR: $e" "ERROR"}; $ps2.EndInvoke($handle) } catch {}
-            $ps2.Dispose(); $rs.Dispose()
+            try{foreach($e in $ps2.Streams.Error){Write-Out "NetScan ERR: $e" "ERROR"};$ps2.EndInvoke($handle)}catch{}
+            $ps2.Dispose();$rs.Dispose()
         }
     })
     $tmr.Start()
@@ -3612,8 +4562,8 @@ ui $btnStop {$btnStop.Visibility=[System.Windows.Visibility]::Collapsed;$btnStop
 
 $btnNetScan.Add_Click({ Start-NetScan })
 $btnNetGetComputers.Add_Click({ Get-NetComputers })
-$btnNetSelectAll.Add_Click({ $p=$lstNetComputers.Content;if($p){foreach($chk in $p.Children){$chk.IsChecked=$true}} })
-$btnNetSelectNone.Add_Click({ $p=$lstNetComputers.Content;if($p){foreach($chk in $p.Children){$chk.IsChecked=$false}} })
+$btnNetSelectAll.Add_Click({ foreach($chk in $lstNetComputers.Children){$chk.IsChecked=$true} })
+$btnNetSelectNone.Add_Click({ foreach($chk in $lstNetComputers.Children){$chk.IsChecked=$false} })
 $btnNetStop.Add_Click({ $Script:NetScanCancel = $true; $btnNetStop.IsEnabled = $false })
 $btnNetExport.Add_Click({ Export-ToCSV -Data $gridNetStatus.ItemsSource -DefaultName "AD_NetworkStatus.csv" })
 $ctxNetCopyCell.Add_Click({ $v = Get-GridCellValue -grid $gridNetStatus; if ($v) { [System.Windows.Clipboard]::SetText("$v") } })
@@ -3633,11 +4583,97 @@ $ctxNetRDP.Add_Click({
 
 
 #region ── STARTUP ────────────────────────────────────────────────────────────
+$Script:SortHandler = {
+    param($sender, $e)
+    $e.Handled = $true
+    $grid = $sender
+    $col  = $e.Column
+    if (-not $grid -or -not $col) { return }
+    $prop = $col.SortMemberPath
+    if ([string]::IsNullOrWhiteSpace($prop)) { $prop = [string]$col.Header }
+    if ([string]::IsNullOrWhiteSpace($prop)) { return }
+    $items = @($grid.ItemsSource)
+    if ($items.Count -eq 0) { return }
+    $asc  = [System.ComponentModel.ListSortDirection]::Ascending
+    $desc = [System.ComponentModel.ListSortDirection]::Descending
+    $dir  = if ($col.SortDirection -eq $asc) { $desc } else { $asc }
+    foreach ($c2 in $grid.Columns) { $c2.SortDirection = $null }
+    $col.SortDirection = $dir
+    $p = $prop
+    $sorted = if ($dir -eq $asc) {
+        $items | Sort-Object -Property @{ Expression = {
+            $v = $_.PSObject.Properties[$p].Value
+            if ($null -eq $v) { return $null }
+            if ($v -is [datetime]) { return $v }
+            if ($v -is [int] -or $v -is [long] -or $v -is [double] -or $v -is [decimal]) { return $v }
+            $num = 0.0
+            if ([double]::TryParse(($v -replace '[^0-9,\.\-]','').Replace(',','.'), [ref]$num)) { return $num }
+            return [string]$v
+        } }
+    } else {
+        $items | Sort-Object -Descending -Property @{ Expression = {
+            $v = $_.PSObject.Properties[$p].Value
+            if ($null -eq $v) { return $null }
+            if ($v -is [datetime]) { return $v }
+            if ($v -is [int] -or $v -is [long] -or $v -is [double] -or $v -is [decimal]) { return $v }
+            $num = 0.0
+            if ([double]::TryParse(($v -replace '[^0-9,\.\-]','').Replace(',','.'), [ref]$num)) { return $num }
+            return [string]$v
+        } }
+    }
+    $grid.ItemsSource = [object[]]@($sorted)
+    if ($grid -eq $gridUsers) {
+        $Script:UserCV = [System.Windows.Data.CollectionViewSource]::GetDefaultView($gridUsers.ItemsSource)
+        if ($txtUserLiveFilter -and -not [string]::IsNullOrWhiteSpace($txtUserLiveFilter.Text)) {
+            $ft = $txtUserLiveFilter.Text.Trim()
+            $Script:UserCV.Filter = [Predicate[object]]{
+                param($item)
+                $item.Username    -like "*$ft*" -or $item.DisplayName -like "*$ft*" -or
+                $item.Email       -like "*$ft*" -or $item.Department  -like "*$ft*" -or
+                $item.Title       -like "*$ft*"
+            }
+            $Script:UserCV.Refresh()
+        }
+    }
+}
+
+function Enable-ADGridSorting {
+    param([System.Windows.Controls.DataGrid[]]$Grids)
+    $autoGenHandler = {
+        param($s, $e)
+        if ($e.Column -and $e.Column.Header) {
+            $e.Column.SortMemberPath = [string]$e.Column.Header
+            $e.Column.CanUserSort = $true
+        }
+    }
+    foreach ($g in $Grids) {
+        if (-not $g) { continue }
+        try { $g.CanUserSortColumns = $true } catch {}
+        try { $g.Add_Sorting($Script:SortHandler) } catch {}
+        try { $g.Add_AutoGeneratingColumn($autoGenHandler) } catch {}
+        try {
+            foreach ($col in $g.Columns) {
+                if ([string]::IsNullOrWhiteSpace($col.SortMemberPath) -and $col.Header) {
+                    $col.SortMemberPath = [string]$col.Header
+                }
+                $col.CanUserSort = $true
+            }
+        } catch {}
+    }
+}
+
 $Window.Add_Loaded({
     Write-ADLog "AD Manager v$($Script:AppVersion) started on $env:COMPUTERNAME by $env:USERNAME"
     Load-SystemInfo
     Load-DomainInfo
+    Enable-ADGridSorting -Grids @(
+        $gridNetStatus,$gridUsers,$gridGroups,$gridComputers,$gridShares,$gridPerms,
+        $gridDisk,$gridRamSticks,$gridPhysDisk,$gridNetAdapters,$gridServices,$gridStartup,$gridProcs,
+        $gridMemberOf,$gridGPOs,$gridGPOLinks,$gridDCs,$gridHeatmapDetail,
+        $gridComputerHeatmapDetail,$gridUsersHeatmapDetail
+    )
 })
+
 
 $Window.ShowDialog() | Out-Null
 #endregion
