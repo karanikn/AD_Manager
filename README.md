@@ -13,7 +13,7 @@
 
 ## Overview
 
-**AD Manager** is a professional Active Directory administration tool built entirely in PowerShell (~4,700 lines) with a WPF GUI. It provides a unified tabbed interface for the most common — and not so common — AD management tasks.
+**AD Manager** is a professional Active Directory administration tool built entirely in PowerShell (~4,800 lines) with a WPF GUI. It provides a unified tabbed interface for the most common — and not so common — AD management tasks.
 
 Designed for **IT administrators and sysadmins** managing Windows Server domains. Runs directly on a domain controller or any domain-joined machine with RSAT installed. Single `.ps1` file, no installation required.
 
@@ -45,7 +45,7 @@ Set-ExecutionPolicy -Scope Process Bypass
 ## Interface — All Tabs
 
 ### System
-Local machine hardware and software inventory. Loads automatically on startup. Text wraps to window width — no horizontal scroll.
+Local machine hardware and software inventory. Loads automatically on startup. All fields support text wrapping — no horizontal scroll.
 
 | Section | Contents |
 |---------|----------|
@@ -57,8 +57,8 @@ Local machine hardware and software inventory. Loads automatically on startup. T
 | Disk Drives | Logical (label, total, used, free, used%) and physical drives |
 | Network Adapters | Adapter name, MAC, IP, gateway, DNS servers |
 | Services | All services with state/start mode/account — live text filter |
-| Startup Applications | Items in registry Run keys with command and location |
-| Top 30 Processes | Sorted by CPU time (Name, PID, CPU, RAM MB, Company) |
+| Startup Applications | Items in registry Run keys |
+| Top 30 Processes | Sorted by CPU time |
 
 **Refresh System Info** reloads all sections on demand.
 
@@ -70,24 +70,49 @@ Domain and forest summary. Loads automatically on startup.
 - Forest name, functional level, schema version
 - Domain name, SID, NetBIOS name
 - FSMO roles: PDC Emulator, RID Master, Infrastructure Master, Schema Master, Domain Naming Master
-- All Domain Controllers with site, IP, OS, Global Catalog status, RODC status
+- All Domain Controllers with site, IP, OS, Global Catalog, RODC status
 - Object counts (users, groups)
-- **Last Logon Heatmap** — calendar heat tiles by day; click any tile to see which users last logged on that day inline below the heatmap
+- **Last Logon Heatmap** — calendar heat tiles by day; click any tile to see which users last logged on that day inline
 
 ---
 
 ### OU Tree
-Organizational Unit hierarchy browser. Displays the full OU tree. Export the complete structure to CSV.
+Organizational Unit hierarchy browser. Export the full structure to CSV.
 
 ---
 
 ### Shares
 Local share enumeration with deep NTFS permission scanner.
 
-- Lists all shared folders (name, path, description, share permissions)
-- Click a share → recursively scans NTFS permissions
-- GridSplitter between shares list and permissions grid
-- Export to CSV
+**Top grid** — all shared folders (Name, Path, Description, Type, MaxAllowed).  
+Click a share → immediately shows its root ACL in the bottom grid (Principal, AccessType, Rights, Inherited, Source). The grid updates on click without running a full scan.
+
+**Check User / Group Permissions section:**
+
+| Control | Description |
+|---------|-------------|
+| Text box | SAMAccountName or group name to search for |
+| **Users** | Opens AD picker: loads all users on open, live filter, multi-select (Ctrl+Click) |
+| **Groups** | Opens AD picker: loads all groups on open, live filter, multi-select (Ctrl+Click) |
+| Browse Folder... | Pick a specific subfolder path to scan instead of all shares |
+| Depth | How many subfolder levels to scan (default 2) |
+| **Check NTFS Permissions** | Start scan — if a share is selected, scans only that share; otherwise scans all shares |
+| **Stop** | Cancels the running scan immediately |
+
+**Checkboxes:**
+- Skip system folders (.Bin, System Vol. Info)
+- Skip admin shares (ADMIN$, C$, D$, IPC$)
+- Warn at 1000+ results
+
+**Live progress label** below the checkboxes shows current share and folder count during scan.
+
+**Result columns:** ShareName · FolderPath · Principal · AccessType · Rights · Inherited · Source (Share ACL or NTFS)
+
+**Export Shares CSV** — exports the share list.  
+**Export Full Perms CSV** — exports all root ACLs across all shares.  
+**Export Checked Permissions CSV** — exports the last scan results.
+
+> **Note:** Load Shares does not trigger the NTFS scanner. The scanner only runs when you explicitly click "Check NTFS Permissions".
 
 ---
 
@@ -101,22 +126,22 @@ Full AD user management hub.
 | Load | Fetch all domain users |
 | Export CSV | Export current view to CSV |
 | Export XLSX | Export to Excel with formatting |
-| Enable / Disable | Toggle selected user(s) with optional confirmation |
+| Enable / Disable | Toggle selected user(s) with confirmation |
 | Reset Pwd | Reset password for selected user |
 | Unlock | Unlock a locked-out account |
 | Member-Of | Show all groups the selected user belongs to |
 | **Auth Audit** | Authentication event audit for selected user (all DCs) |
 | Heatmap | Last logon activity heatmap |
 
-**Live filter** — type in the Filter box to instantly narrow the list by username, display name, email, department, or title.
+**Live filter** — type to instantly narrow by username, display name, email, department, or title.
 
 **Disabled only** checkbox — show only disabled accounts.
 
 **Columns:** Username, DisplayName, Email, Enabled, LockedOut, Department, Title, PwdLastSet, PwdNeverExpires, LastLogon, Created, OU
 
-**Right-click menu:** Copy cell value · Copy row · Show user details
+**Right-click:** Copy cell · Copy row · Show user details
 
-**Double-click** any row → User Details dialog.
+**Double-click** → User Details dialog.
 
 ---
 
@@ -126,8 +151,8 @@ Opens on double-click or right-click → *Show user details*.
 
 - **Left panel (dark console)** — full user attributes: Username, Display, Email, Title, Department, Office, Phone, Mobile, Manager, Direct Reports count, Description, OU, Enabled, LockedOut, Created, Last Logon, Pwd LastSet, Pwd Never Expires, Account Expiry, SID, Distinguished Name
 - **Right panel** — Group Membership list (multi-select with Ctrl+Click / Shift+Click)
-  - **Browse...** — opens Browse Groups: loads all AD groups on open, searchable by name (partial match), supports multi-select → adds user to all selected groups
-  - **Add** — add to a group typed directly in the text box
+  - **Browse...** — opens Browse Groups: loads all AD groups on open, searchable by name (partial match), multi-select, adds user to all selected groups
+  - **Add** — add to a group typed in the text box
   - **Remove from Selected Groups** — removes user from highlighted groups with confirmation
 - **Copy Info** — copies the info panel text to clipboard
 
@@ -137,23 +162,23 @@ Opens on double-click or right-click → *Show user details*.
 
 Select a user → click **Auth Audit**.
 
-Queries **all Domain Controllers** in parallel for the configured number of days back (default 7, max 90). Runs in a background runspace — dialog stays responsive.
+Queries **all Domain Controllers** for the last N days (default 7, max 90). Runs in a background runspace — dialog stays responsive. **Stop** button cancels mid-scan.
 
 | Event ID | Meaning |
 |----------|---------|
-| 4624 | Successful logon (includes logon type: 2=Console, 3=Network, 7=Unlock, 10=RDP, 11=Cached) |
-| 4625 | Failed logon attempt |
-| 4768 | Kerberos TGT request (initial authentication) |
-| 4769 | Kerberos service ticket request (resource access) |
-| 4771 | Kerberos pre-authentication failure (wrong password) |
+| 4624 | Successful logon (includes logon type: 2=Console, 3=Network, 7=Unlock, 10=RDP) |
+| 4625 | Failed logon |
+| 4768 | Kerberos TGT request |
+| 4769 | Kerberos service ticket request |
+| 4771 | Kerberos pre-authentication failure |
 | 4776 | NTLM credential validation |
 | 4740 | Account lockout |
 
-**Result columns:** Time, DC, EventID, Status, Description, Source IP, Workstation, Logon Type, Auth Package
+**Result columns:** Time · DC · EventID · Status · Description · Source IP · Workstation · Logon Type · Auth Package
 
-**Stop** button cancels mid-scan. **Export CSV** saves results.
+**Export CSV** saves results.
 
-> **Prerequisite:** Audit policies must be enabled in GPO. The yellow notice in the dialog shows the exact GPO path. Use **File → Settings → Audit Policies** to check current status and apply policies.
+> **Prerequisite:** Audit policies must be enabled in GPO. The yellow notice in the dialog shows the exact path. Use **File → Settings → Audit Policies** to check and apply.
 
 ---
 
@@ -161,7 +186,7 @@ Queries **all Domain Controllers** in parallel for the configured number of days
 
 AD group management with member editing.
 
-**Toolbar:** Load · Export CSV · Include nested members (checkbox) · live Filter
+**Toolbar:** Load · Export CSV · Include nested members · live Filter
 
 **Columns:** Name, SAMAccount, Category, Scope, Description
 
@@ -173,9 +198,9 @@ AD group management with member editing.
 
 #### Group Details Dialog
 
-- **Left panel** — group info: Name, SAMAccount, Category, Scope, Description, Email, ManagedBy, Created, Modified, Members count, Distinguished Name
+- **Left panel** — group info: Name, SAMAccount, Category, Scope, Description, Email, ManagedBy, Created, Modified, Members count, DN
 - **Right panel** — Member list (multi-select)
-  - **Browse...** — loads all AD users and groups on open, searchable, multi-select → **Add Selected** adds them all
+  - **Browse...** — loads all AD users and groups on open, searchable, multi-select → **Add Selected**
   - **Add** — add by SAMAccountName
   - **Remove Selected Members** — with confirmation
 - **Copy Info** — copies info panel to clipboard
@@ -200,9 +225,7 @@ Group Policy Object list.
 
 **Columns:** Name, ID (GUID), Status, Owner, Created, Modified, UserVersion, ComputerVersion
 
-**GPO Link Viewer** button — shows every GPO-to-OU link across the domain.
-
-Export to CSV.
+**GPO Link Viewer** — shows every GPO-to-OU link across the domain. Export to CSV.
 
 ---
 
@@ -220,9 +243,7 @@ Users and computers with no logon in N days (configurable threshold). Two separa
 
 ### Recycle Bin
 
-Deleted AD objects — requires the AD Recycle Bin feature to be enabled on the domain.
-
-Columns: object name, class, when deleted, last known parent OU.
+Deleted AD objects — requires the AD Recycle Bin feature to be enabled on the domain. Shows object name, class, when deleted, last known parent OU.
 
 ---
 
@@ -241,7 +262,7 @@ Requires `DnsServer` PowerShell module.
 Requires `DhcpServer` PowerShell module.
 
 - All DHCP scopes with subnet, range, state, lease count
-- Click a scope → load active leases (IP address, MAC, hostname, expiry)
+- Click a scope → load active leases (IP, MAC, hostname, expiry)
 - Export to CSV
 
 ---
@@ -284,44 +305,44 @@ Parallel network scanner for all domain computers.
 | Get Computers | Load AD computer list as scrollable checkboxes — check/uncheck which to scan |
 | Select All / Clear | Bulk select/deselect |
 | Start Scan | Begin parallel scan |
-| Stop | Abort in-progress scan |
+| Stop | Abort scan |
 | Export CSV | Save results |
 | Timeout (ms) | Per-host timeout (default 30 ms) |
 | Retries | Ping retries (default 0) |
-| Threads | Parallel workers via RunspacePool (default 20, max 50) |
-| Discovery | Detection method (see table below) |
+| Threads | Parallel workers via RunspacePool MTA (default 20, max 50) |
+| Discovery | Detection method (see below) |
 
 **Discovery methods:**
 
 | Method | Behavior |
 |--------|----------|
-| Ping (ICMP) | Standard ICMP — may be blocked by Windows Firewall on workstations |
-| TCP 445 (SMB) | SMB port check — usually open on domain machines even when ICMP is blocked |
+| Ping (ICMP) | Standard ICMP — may be blocked by Windows Firewall |
+| TCP 445 (SMB) | SMB port — usually open on domain machines even when ICMP is blocked |
 | TCP 88 (Kerberos) | Kerberos KDC port — domain controllers |
 | TCP 389 (LDAP) | LDAP port — domain controllers |
 | TCP 3389 (RDP) | Remote Desktop port |
-| **Multi-port (any)** | Tries Ping → 445 → 88 → 389 → 3389 in sequence — highest detection rate (default) |
+| **Multi-port (any)** | Tries Ping → 445 → 88 → 389 → 3389 in sequence (default) |
 
 **Enrichment options:**
 
 | Checkbox | What it adds |
 |----------|-------------|
-| Online only | Hides offline machines from results |
-| WMI | Uptime, Free RAM, Free Disk per drive via CIM/WMI |
-| PSRemoting | Same enrichment via PowerShell Remoting (fallback when WMI fails) |
+| Online only | Hides offline machines |
+| WMI | Uptime, Free RAM, Free Disk via CIM/WMI |
+| PSRemoting | Same enrichment via PowerShell Remoting (fallback) |
 | RemoteReg (LastUser) | Last logged-on username from remote registry |
 
-**Result columns:** Status · Name · IP · RTT · Port445 · Port88 · Port389 · OS · LastLogon · LastUserLogon · Uptime · FreeRAM · FreeDisk · FreeDisk% · DNSHost
+**Result columns:** Status · Name · IP · **IPv6** · RTT · Port445 · Port88 · Port389 · OS · LastLogon · LastUserLogon · Uptime · FreeRAM · FreeDisk · FreeDisk% · DNSHost
 
 **Right-click on results:** Copy cell · Copy row · Ping (continuous) · RDP connect
 
-Scan runs in a **background runspace** (MTA RunspacePool). Progress shown as `[done/total] (pct%) hostname...`. Grid updates live every 5 results.
+Scan runs in a **background RunspacePool (MTA)**. Grid updates live every 5 results. IPv6 address resolved via DNS and shown in separate column.
 
 ---
 
 ### Output
 
-Live console showing every PowerShell command executed by the tool, with timestamps and results. Format: `[HH:mm:ss][CMD] Get-ADUser ...` / `[INF] Loading users...`. Auto-scroll toggle. Save to file.
+Live console showing every PowerShell command executed by the tool, with timestamps. Auto-scroll toggle. Save to file.
 
 ---
 
@@ -345,13 +366,13 @@ Timestamped session event log — every action, warning, and error. Save to file
 
 ### General Tab
 - Keyboard shortcuts (F5 = Refresh, Ctrl+E = Export, Ctrl+F = Filter focus)
-- Feature toggles: live filter on DataGrids, confirm before destructive actions, show row count below grids
+- Feature toggles: live filter on DataGrids, confirm before destructive actions, show row count
 
 ### Audit Policies Tab
 
-Full audit policy configurator. Each subcategory has independent **Success** and **Failure** checkboxes in a scrollable table.
+Full audit policy configurator. Each subcategory has independent **Success** and **Failure** checkboxes in a scrollable table with a resizable output console (GridSplitter).
 
-**Categories and subcategories:**
+**Categories:**
 
 | Category | Subcategory | Key Events |
 |----------|-------------|------------|
@@ -374,25 +395,35 @@ Full audit policy configurator. Each subcategory has independent **Success** and
 | System | Security State Change | 4608, 4609 |
 | System | System Integrity | 4612 |
 
-Every row has a detailed **tooltip** with: event IDs, practical use case, volume warnings, and exact GPO path (`Computer Configuration → Policies → Windows Settings → Security Settings → Advanced Audit Policy Configuration → [Category] → Audit [Subcategory]`).
+Each row has a detailed **tooltip**: event IDs, practical use case, volume warnings, and exact GPO path (`Computer Configuration → Policies → Windows Settings → Security Settings → Advanced Audit Policy Configuration → [Category] → Audit [Subcategory]`).
 
 **Buttons:**
 
 | Button | Action |
 |--------|--------|
-| Check Current Status | Runs `auditpol /get /category:*` and auto-ticks checkboxes to reflect current state |
-| Apply via auditpol | Applies all Success/Failure settings using `auditpol.exe` (requires Administrator) |
+| Check Current Status | Runs `auditpol /get /category:*` and auto-ticks checkboxes |
+| Apply via auditpol | Applies all checked Success/Failure settings using `auditpol.exe` (Admin required) |
 | All Success | Tick all Success checkboxes |
 | All Failure | Tick all Failure checkboxes |
 | Clear All | Untick everything |
 
-The output console (resizable with the GridSplitter) shows auditpol output and apply results.
+---
+
+## AD Picker Dialog (Users / Groups)
+
+Used in the Shares tab (Users and Groups buttons) and User/Group Details dialogs.
+
+- Loads **all** AD users or groups immediately on open
+- **Live filter** — type to filter the list in real time (no Search button needed)
+- **Multi-select** — Ctrl+Click or Shift+Click for multiple selections
+- **Double-click** selects and closes
+- Item count shown: `45 / 123 items`
 
 ---
 
 ## Column Sorting
 
-Click any column header in any grid to sort ascending. Click again for descending. Sort indicator (▲▼) shown on the active column. Works across all tabs.
+Click any column header in any grid to sort ascending. Click again for descending. Sort indicator (▲▼) shown on the active column. Works across all tabs using `PSObject.Properties[$p].Value` for reliable PS 5.1 compatibility.
 
 ---
 
@@ -400,18 +431,20 @@ Click any column header in any grid to sort ascending. Click again for descendin
 
 **Live Filter** — Users, Groups, Computers tabs support real-time text filtering without reloading from AD.
 
-**Heatmaps** — Calendar heat tiles showing Last Logon distribution by day. Available in Domain tab (users) and Users tab. Click any tile to see which accounts last logged on that day.
+**Heatmaps** — Calendar heat tiles showing Last Logon distribution by day. Click any tile to see which accounts last logged on that day.
 
-**Export** — CSV export on all major grids. Users tab additionally supports Excel (.xlsx) export with auto-fit columns and header formatting.
+**Export** — CSV export on all major grids. Users tab additionally supports Excel (.xlsx) export.
 
-**Runspace Architecture** — Net Status scan and Auth Audit run in separate PowerShell runspaces (background threads) keeping the UI fully responsive. Clean Stop buttons cancel gracefully.
+**Runspace Architecture** — Net Status scan, NTFS Permissions scan, and Auth Audit run in separate PowerShell runspaces (background threads) keeping the UI fully responsive. All have **Stop** buttons for clean cancellation.
+
+**Stop mechanism (NTFS scan)** — Uses a synchronized hashtable AND a temp file (`%TEMP%\ADMgr_StopScan.tmp`) as dual inter-runspace cancel signals for reliable stopping across PS 5.1 runspace boundaries.
 
 ---
 
 ## File Structure
 
 ```
-AD_Manager.ps1    # Single self-contained script (~4,700 lines)
+AD_Manager.ps1    # Single self-contained script (~4,800 lines)
 README.md         # This file
 ```
 
@@ -421,18 +454,47 @@ README.md         # This file
 
 ### v2.1 (Current)
 
-- **Net Status tab** — parallel RunspacePool scanner (MTA threading); six discovery methods (Ping / TCP 445 / 88 / 389 / 3389 / Multi-port); WMI + PSRemoting + RemoteReg enrichment; Port445 / Port88 / Port389 columns; live progress counter; Stop button; Export CSV; RDP and Ping context menu; scrollable computer checklist
-- **User Details dialog** — full attribute info panel + group membership editor; Browse Groups (loads all on open, search filter, multi-select); Add to group; Remove from selected groups
-- **Auth Audit** — per-user authentication event query across all DCs; background runspace; events 4624 / 4625 / 4768 / 4769 / 4771 / 4776 / 4740; Stop button; Export CSV; GPO prerequisite notice
-- **Group Details dialog** — full group info panel + member list; Browse Users/Groups (loads all, multi-select); Add by SAMAccountName; Remove selected members
-- **Settings → Audit Policies tab** — Success/Failure checkbox table per subcategory; Check Current Status reads auditpol and auto-ticks; Apply via auditpol; All Success / All Failure / Clear All; rich tooltips with exact GPO paths; resizable output console via GridSplitter
-- **Column sorting** — universal sort handler on all DataGrids using `PSObject.Properties[$p].Value` for reliable PS 5.1 compatibility; direction toggle with ▲▼ indicator
-- **Computers tab** — RDP and Ping context menu items (same as Net Status)
-- **System tab** — TextWrapping on all stat fields; no horizontal scroll
-- **Auth Audit prerequisite notice** — yellow panel in dialog with exact GPO path required
+**Net Status tab**
+- Parallel RunspacePool scanner (MTA threading); six discovery methods; WMI + PSRemoting + RemoteReg enrichment
+- Port445 / Port88 / Port389 columns; IPv6 column (DNS-resolved)
+- Live progress counter; Stop button; Export CSV; RDP and Ping context menu
+- Scrollable computer checklist with Select All / Clear
+
+**Shares tab**
+- Click a share → immediate ACL display in bottom grid (no scan needed)
+- **Users** and **Groups** picker buttons replace "Pick from AD" — load all items on open, live filter, multi-select
+- Load Shares no longer triggers the NTFS scanner
+- NTFS scan Stop button works reliably via temp file signal
+- Live progress label during scan showing current share/folder count
+
+**Users tab**
+- User Details dialog: full attribute panel + group membership editor
+- Browse Groups: loads all on open, search filter, multi-select add
+- Auth Audit: per-user authentication events from all DCs, background runspace, Stop button, Export CSV
+- GPO prerequisite notice with exact path
+
+**Groups tab**
+- Group Details dialog: full info panel + member list with Browse Users/Groups (multi-select), Add/Remove
+
+**Settings → Audit Policies tab**
+- Success/Failure checkbox table per subcategory
+- Check Current Status reads `auditpol` and auto-ticks checkboxes
+- Apply via auditpol; All Success / All Failure / Clear All
+- Rich tooltips with exact GPO paths
+- Resizable output console via GridSplitter
+
+**Column sorting**
+- Universal sort handler on all DataGrids
+- Uses `PSObject.Properties[$p].Value` for PS 5.1 compatibility
+- Direction toggle with ▲▼ indicator
+
+**Computers tab**
+- RDP and Ping context menu items
+
+**System tab**
+- TextWrapping on all stat fields — no horizontal scroll
 
 ### v2.0
-
 - Initial WPF GUI release — 19 tabs
 - Live filter on Users / Groups / Computers
 - Last logon heatmap (Domain and Users tabs)
@@ -454,7 +516,7 @@ IT Administrator · Developer
 
 ## AI Assistance
 
-Developed with the assistance of **Claude** (Anthropic) for code generation, architecture decisions, and debugging.
+Developed with the assistance of **Claude** (Anthropic) and **ChatGPT** (OpenAI) for code generation, architecture decisions, and debugging.
 
 [![Built with Claude](https://img.shields.io/badge/built%20with-Claude%20AI-orange?style=flat-square&logo=anthropic)](https://claude.ai)
 

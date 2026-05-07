@@ -717,7 +717,8 @@ function Export-ToCSV {
               <!-- Row 1: user + depth + action buttons -->
               <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
                 <TextBox x:Name="txtCheckUser" Style="{StaticResource FBox}" Width="170" Margin="0,0,6,0" ToolTip="SAMAccountName or DOMAIN\user"/>
-                <Button x:Name="btnPickUser"     Content="Pick from AD"    Style="{StaticResource SecBtn}" Margin="0,0,8,0"/>
+                <Button x:Name="btnPickUsers"    Content="Users"            Style="{StaticResource SecBtn}" Margin="0,0,4,0" ToolTip="Load all AD users - select one or more to fill the filter box"/>
+                <Button x:Name="btnPickGroups"   Content="Groups"           Style="{StaticResource SecBtn}" Margin="0,0,8,0" ToolTip="Load all AD groups - select one or more to fill the filter box"/>
                 <Button x:Name="btnBrowseFolder" Content="Browse Folder..."  Style="{StaticResource SecBtn}" Margin="0,0,8,0" ToolTip="Scan a specific folder instead of all shares"/>
                 <TextBlock Text="Depth:" VerticalAlignment="Center" FontSize="11" Margin="0,0,4,0" ToolTip="Subfolder levels (0=root, 2=default, 4=deep)"/>
                 <TextBox x:Name="txtScanDepth" Style="{StaticResource FBox}" Width="36" Text="2" Margin="0,0,8,0"/>
@@ -1354,14 +1355,17 @@ $gridShares = B "gridShares"; $gridPerms = B "gridPerms"
 $btnLoadShares = B "btnLoadShares"; $btnExportSharesBtn = B "btnExportSharesBtn"
 $btnExportPermsBtn = B "btnExportPermsBtn"; $txtCheckUser = B "txtCheckUser"
 $txtScanDepth = B "txtScanDepth"
-$btnPickUser = B "btnPickUser"
+$btnPickUsers = B "btnPickUsers"
+$btnPickGroups = B "btnPickGroups"
 $btnBrowseFolder = B "btnBrowseFolder"; $btnCheckPerms = B "btnCheckPerms"
 $btnStopScan = B "btnStopScan"
+$lblScanProgress = B "lblScanProgress"
 $btnExportPermsResult = B "btnExportPermsResult"
 $chkSkipSystemFolders = B "chkSkipSystemFolders"
 $chkSkipAdminShares   = B "chkSkipAdminShares"
 $chkLimitResults      = B "chkLimitResults"
 $Script:ScanCancelFlag = $false
+$Script:ScanCancel = [hashtable]::Synchronized(@{Value=$false})
 
 # Users tab
 $gridUsers = B "gridUsers"; $btnLoadUsers = B "btnLoadUsers"; $btnExportUsersBtn = B "btnExportUsersBtn"
@@ -1916,6 +1920,7 @@ function Check-UserSharePermissions {
     # Reset cancel flag and show Stop button
     $Script:ScanCancelFlag = $false
     $btnStopScan.Visibility = [System.Windows.Visibility]::Visible
+    if ($lblScanProgress) { $lblScanProgress.Text = "Starting scan for $Identity..." }
     # Disable buttons immediately on UI thread
     $btnCheckPerms.IsEnabled   = $false
     $btnBrowseFolder.IsEnabled = $false
@@ -1933,17 +1938,18 @@ function Check-UserSharePermissions {
     $__txtO   = $Global:txtOutput
     $__txtL   = $Global:txtLog
     $__pb     = $Global:pbMain
-    $__lbl    = $Global:lblStatus
+    $__lbl      = $Global:lblStatus
+    $__scanLbl  = $lblScanProgress
     $__asc    = $Global:chkAutoScroll
     $__win    = $window
     $__btnC   = $btnCheckPerms
     $__btnB   = $btnBrowseFolder
     $__btnStop = $btnStopScan
     $__cachedRef = [ref]$Script:CachedPermsCheck
-    $__cancelRef = [ref]$Script:ScanCancelFlag
+    $__cancelRef = $Script:ScanCancel  # synchronized hashtable - shared across runspaces
 
     $__blockStr = @'
-        param($id,$depth,$skipSys,$skipAdmin,$limitRes,$shares,$grid,$logBuf,$outBuf,$txtO,$txtL,$pb,$lbl,$asc,$win,$btnC,$btnB,$btnStop,$cachedRef,$cancelRef)
+        param($id,$depth,$skipSys,$skipAdmin,$limitRes,$shares,$grid,$logBuf,$outBuf,$txtO,$txtL,$pb,$lbl,$asc,$win,$btnC,$btnB,$btnStop,$cachedRef,$cancelRef,$scanLbl)
         function BW([string]$T,[string]$K="INFO"){
             $ts=(Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
             $log="[$ts][$K] $T"
@@ -1955,6 +1961,7 @@ function Check-UserSharePermissions {
         function BS([string]$M,[int]$P=-1){
             try{$lbl.Dispatcher.Invoke([action]{$lbl.Text=$M})}catch{}
             try{if($P-ge 0){$pb.Dispatcher.Invoke([action]{$pb.Value=$P})}}catch{}
+            try{if($scanLbl){$scanLbl.Dispatcher.Invoke([action]{$scanLbl.Text=$M})}}catch{}
             BW $M
         }
         BW "--- Checking permissions for: $id (depth=$depth) ---" "SEP"
@@ -1972,7 +1979,7 @@ function Check-UserSharePermissions {
 
         $total=$sharesToScan.Count; $idx=0
         foreach($share in $sharesToScan){
-            if($cancelRef.Value){ BW "Scan cancelled by user." "WARN"; break }
+            if($cancelRef.Value -or (Test-Path "$env:TEMP\ADMgr_StopScan.tmp" -EA SilentlyContinue)){ BW "Scan cancelled by user." "WARN"; break }
             $idx++; $pct=[int](($idx/[math]::Max($total,1))*88); $sn=$share.Name
             BS "[$idx/$total] $sn - $folderCount φάκελοι, $($results.Count) entries..." $pct
             $sp=$share.Path
@@ -2001,7 +2008,7 @@ function Check-UserSharePermissions {
             if(-not [string]::IsNullOrWhiteSpace($sp) -and (Test-Path $sp -EA SilentlyContinue)){
                 $queue=[System.Collections.Queue]::new(); $queue.Enqueue(@{P=$sp;D=0})
                 while($queue.Count -gt 0){
-                    if($cancelRef.Value){ BW "Scan cancelled by user." "WARN"; break }
+                    if($cancelRef.Value -or (Test-Path "$env:TEMP\ADMgr_StopScan.tmp" -EA SilentlyContinue)){ BW "Scan cancelled by user." "WARN"; break }
                     $item=$queue.Dequeue(); $fp=$item.P; $fd=$item.D
                     $folderCount++
                     if($folderCount % 10 -eq 0){
@@ -2052,6 +2059,8 @@ function Check-UserSharePermissions {
         try{$btnC.Dispatcher.Invoke([action]{$btnC.IsEnabled=$true})}catch{}
         try{$btnB.Dispatcher.Invoke([action]{$btnB.IsEnabled=$true})}catch{}
         try{$btnStop.Dispatcher.Invoke([action]{$btnStop.IsEnabled=$true; $btnStop.Visibility=[System.Windows.Visibility]::Collapsed})}catch{}
+        try{Remove-Item "$env:TEMP\ADMgr_StopScan.tmp" -Force -EA SilentlyContinue}catch{}
+        try{if($scanLbl){$scanLbl.Dispatcher.Invoke([action]{$scanLbl.Text=""})}}catch{}
 '@
     $__block = [scriptblock]::Create($__blockStr)
 
@@ -2059,7 +2068,7 @@ function Check-UserSharePermissions {
     $rs.ApartmentState="STA"; $rs.ThreadOptions="ReuseThread"; $rs.Open()
     $ps=[System.Management.Automation.PowerShell]::Create()
     $ps.Runspace=$rs
-    [void]$ps.AddScript($__block).AddArgument($__id).AddArgument($__depth).AddArgument($__skipSys).AddArgument($__skipAdmin).AddArgument($__limitRes).AddArgument($__shares).AddArgument($__grid).AddArgument($__logBuf).AddArgument($__outBuf).AddArgument($__txtO).AddArgument($__txtL).AddArgument($__pb).AddArgument($__lbl).AddArgument($__asc).AddArgument($__win).AddArgument($__btnC).AddArgument($__btnB).AddArgument($__btnStop).AddArgument($__cachedRef).AddArgument($__cancelRef)
+    [void]$ps.AddScript($__block).AddArgument($__id).AddArgument($__depth).AddArgument($__skipSys).AddArgument($__skipAdmin).AddArgument($__limitRes).AddArgument($__shares).AddArgument($__grid).AddArgument($__logBuf).AddArgument($__outBuf).AddArgument($__txtO).AddArgument($__txtL).AddArgument($__pb).AddArgument($__lbl).AddArgument($__asc).AddArgument($__win).AddArgument($__btnC).AddArgument($__btnB).AddArgument($__btnStop).AddArgument($__cachedRef).AddArgument($__cancelRef).AddArgument($__scanLbl)
     $handle=$ps.BeginInvoke()
     # Cleanup timer
     $tmr=New-Object System.Windows.Threading.DispatcherTimer
@@ -2069,6 +2078,10 @@ function Check-UserSharePermissions {
             $tmr.Stop()
             try{foreach($e in $ps.Streams.Error){Write-Out "BG ERROR: $e" "ERROR"};$ps.EndInvoke($handle)}catch{}
             $ps.Dispose(); $rs.Dispose()
+            # Safety: ensure buttons restored even if background block failed
+            try{$btnCheckPerms.IsEnabled=$true}catch{}
+            try{$btnBrowseFolder.IsEnabled=$true}catch{}
+            try{$btnStopScan.IsEnabled=$true;$btnStopScan.Visibility=[System.Windows.Visibility]::Collapsed}catch{}
         }
     })
     $tmr.Start()
@@ -2455,67 +2468,149 @@ function Load-DHCPLeases {
 #endregion
 
 #region ── USER PICKER DIALOG ─────────────────────────────────────────────────
-function Show-UserPickerDialog {
-    if (-not (Ensure-ADModule)) { return $null }
+function Show-ADPickerDialog {
+    param(
+        [string]$Title = "Pick from AD",
+        [ValidateSet("Users","Groups")][string]$Mode = "Users"
+    )
+    if (-not (Ensure-ADModule)) { return @() }
+
     [xml]$px = @"
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Pick User or Group" Width="560" Height="460"
+        Title="$Title" Width="680" Height="560" MinWidth="520" MinHeight="420"
         WindowStartupLocation="CenterOwner" ResizeMode="CanResize">
   <Grid Margin="12">
     <Grid.RowDefinitions>
-      <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
-      <RowDefinition Height="*"/>  <RowDefinition Height="Auto"/>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="*"/>
+      <RowDefinition Height="Auto"/>
     </Grid.RowDefinitions>
-    <TextBlock Grid.Row="0" Text="Search user or group (SAMAccountName / DisplayName):" FontWeight="SemiBold" Margin="0,0,0,8"/>
+    <TextBlock Grid.Row="0" Text="Filter by SAMAccountName / Name / DisplayName:" FontWeight="SemiBold" Margin="0,0,0,8"/>
     <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,8">
-      <TextBox x:Name="txtSearch" Width="360" Height="28" Padding="6,0" VerticalContentAlignment="Center"/>
-      <Button x:Name="btnSearch" Content="Search" Height="28" Padding="14,0" Margin="6,0,0,0" Background="#1E6EB5" Foreground="White" FontWeight="SemiBold"/>
+      <TextBox x:Name="txtSearch" Width="430" Height="28" Padding="6,0" VerticalContentAlignment="Center"/>
+      <Button x:Name="btnSearch" Content="Filter" Height="28" Padding="14,0" Margin="6,0,0,0" Background="#1E6EB5" Foreground="White" FontWeight="SemiBold"/>
+      <TextBlock x:Name="lblCount" Text="" VerticalAlignment="Center" Margin="10,0,0,0" Foreground="#666" FontSize="11"/>
     </StackPanel>
-    <ListBox x:Name="lstResults" Grid.Row="2" FontFamily="Consolas" FontSize="12"/>
+    <ListBox x:Name="lstResults" Grid.Row="2" FontFamily="Consolas" FontSize="12" SelectionMode="Extended"/>
     <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+      <TextBlock Text="Ctrl+Click / Shift+Click για πολλαπλή επιλογή" VerticalAlignment="Center" Foreground="#666" FontSize="11" Margin="0,0,16,0"/>
       <Button x:Name="btnOK"     Content="OK"     Width="80" Height="30" Margin="0,0,8,0" Background="#1E6EB5" Foreground="White" FontWeight="SemiBold"/>
       <Button x:Name="btnCancel" Content="Cancel" Width="80" Height="30"/>
     </StackPanel>
   </Grid>
 </Window>
 "@
-    $pr  = [System.Xml.XmlNodeReader]::new($px)
-    $pw  = [Windows.Markup.XamlReader]::Load($pr)
-    $pw.Owner = $Window
-    $ts  = $pw.FindName("txtSearch")
-    $bs  = $pw.FindName("btnSearch")
-    $lst = $pw.FindName("lstResults")
-    $bok = $pw.FindName("btnOK")
-    $bca = $pw.FindName("btnCancel")
-    $Script:PickedUser = $null
 
-    $doSearch = {
-        $q = $ts.Text.Trim(); $lst.Items.Clear()
-        if ([string]::IsNullOrWhiteSpace($q)) { return }
-        try {
-            $u = Get-ADUser  -Filter "SamAccountName -like '*$q*' -or DisplayName -like '*$q*'" | Select-Object -First 50 | ForEach-Object { "$($_.SamAccountName)  [$($_.Name)]  [User]" }
-            $g = Get-ADGroup -Filter "Name -like '*$q*' -or SamAccountName -like '*$q*'" | Select-Object -First 30 | ForEach-Object { "$($_.SamAccountName)  [$($_.Name)]  [Group]" }
-            foreach ($i in ($u + $g | Sort-Object)) { [void]$lst.Items.Add($i) }
-        } catch { }
-    }
-    $bs.Add_Click($doSearch)
-    $ts.Add_KeyDown({ param($s,$e); if ($e.Key -eq "Return") { & $doSearch } })
-    $bok.Add_Click({
-        if ($lst.SelectedItem) {
-            $raw = $lst.SelectedItem.ToString()
-            # Format is: "SAMAccount  [DisplayName]  [Type]"
-            # Extract everything before the first "  [" 
-            $idx2 = $raw.IndexOf("  [")
-            $Script:PickedUser = if ($idx2 -gt 0) { $raw.Substring(0, $idx2).Trim() } else { ($raw -split "\s+")[0] }
+    $pr = [System.Xml.XmlNodeReader]::new($px)
+    $pw = [Windows.Markup.XamlReader]::Load($pr)
+    $pw.Owner = $Window
+
+    # PS 5.1 safe pattern: keep every object used by event handlers in Script scope.
+    $Script:ADPickerWindow     = $pw
+    $Script:ADPickerMode       = $Mode
+    $Script:ADPickerSearchCtrl = $pw.FindName("txtSearch")
+    $Script:ADPickerListCtrl   = $pw.FindName("lstResults")
+    $Script:ADPickerCountCtrl  = $pw.FindName("lblCount")
+    $Script:ADPickerPicked     = @()
+    $Script:ADPickerAllItems   = @()
+
+    $Script:ADPickerDoAccept = {
+        $picked = New-Object System.Collections.Generic.List[string]
+        foreach ($item in @($Script:ADPickerListCtrl.SelectedItems)) {
+            if ($null -ne $item.Tag -and -not [string]::IsNullOrWhiteSpace([string]$item.Tag)) {
+                [void]$picked.Add([string]$item.Tag)
+            }
         }
-        $pw.DialogResult = $true; $pw.Close()
-    })
-    $bca.Add_Click({ $pw.Close() })
+        $Script:ADPickerPicked = @($picked | Select-Object -Unique)
+        $Script:ADPickerWindow.DialogResult = $true
+        $Script:ADPickerWindow.Close()
+    }
+
+    $Script:ADPickerDoSearch = {
+        $q = ""
+        try { $q = $Script:ADPickerSearchCtrl.Text.Trim() } catch { $q = "" }
+        $Script:ADPickerListCtrl.Items.Clear()
+
+        $items = @($Script:ADPickerAllItems)
+        if (-not [string]::IsNullOrWhiteSpace($q)) {
+            $needle = "*${q}*"
+            $items = @($items | Where-Object {
+                $_.Sam -like $needle -or $_.Name -like $needle -or $_.DisplayName -like $needle
+            })
+        }
+
+        foreach ($entry in @($items | Sort-Object Sam)) {
+            $lbi = New-Object System.Windows.Controls.ListBoxItem
+            $lbi.Content = $entry.Line
+            $lbi.Tag = $entry.Sam
+            [void]$Script:ADPickerListCtrl.Items.Add($lbi)
+        }
+        try { $Script:ADPickerCountCtrl.Text = "$($Script:ADPickerListCtrl.Items.Count) / $($Script:ADPickerAllItems.Count)" } catch { }
+    }
+
+    try {
+        if ($Mode -eq "Groups") {
+            $Script:ADPickerAllItems = @(
+                Get-ADGroup -Filter * -Properties Description |
+                    Select-Object SamAccountName,Name,Description |
+                    ForEach-Object {
+                        $sam = [string]$_.SamAccountName
+                        $name = [string]$_.Name
+                        $desc = [string]$_.Description
+                        [PSCustomObject]@{
+                            Sam = $sam
+                            Name = $name
+                            DisplayName = $desc
+                            Line = ("{0,-28}  [{1}]  [Group]" -f $sam,$name)
+                        }
+                    }
+            )
+        } else {
+            $Script:ADPickerAllItems = @(
+                Get-ADUser -Filter * -Properties DisplayName |
+                    Select-Object SamAccountName,Name,DisplayName |
+                    ForEach-Object {
+                        $sam = [string]$_.SamAccountName
+                        $name = [string]$_.Name
+                        $disp = [string]$_.DisplayName
+                        if ([string]::IsNullOrWhiteSpace($disp)) { $disp = $name }
+                        [PSCustomObject]@{
+                            Sam = $sam
+                            Name = $name
+                            DisplayName = $disp
+                            Line = ("{0,-28}  [{1}]  [User]" -f $sam,$disp)
+                        }
+                    }
+            )
+        }
+    } catch {
+        Show-Err "AD list load failed: $($_.Exception.Message)"
+        return @()
+    }
+
+    & $Script:ADPickerDoSearch
+
+    $pw.FindName("btnSearch").Add_Click({ & $Script:ADPickerDoSearch })
+    $Script:ADPickerSearchCtrl.Add_TextChanged({ & $Script:ADPickerDoSearch })
+    $Script:ADPickerSearchCtrl.Add_KeyDown({ param($s,$e); if ($e.Key -eq "Return") { & $Script:ADPickerDoSearch } })
+    $Script:ADPickerListCtrl.Add_MouseDoubleClick({ & $Script:ADPickerDoAccept })
+    $pw.FindName("btnOK").Add_Click({ & $Script:ADPickerDoAccept })
+    $pw.FindName("btnCancel").Add_Click({ $Script:ADPickerWindow.Close() })
+
     $pw.ShowDialog() | Out-Null
-    return $Script:PickedUser
+    return @($Script:ADPickerPicked)
+}
+
+function Show-UserPickerDialog {
+    $picks = Show-ADPickerDialog -Title "Pick User(s) from AD" -Mode "Users"
+    if ($picks -and @($picks).Count -gt 0) { return @($picks)[0] }
+    return $null
 }
 #endregion
+
+
 
 
 function Scan-FolderPermissions {
@@ -3032,23 +3127,90 @@ $btnExportOUsBtn.Add_Click({
 })
 
 $btnLoadShares.Add_Click({ Load-Shares })
-$btnPickUser.Add_Click({ $p = Show-UserPickerDialog; if ($p) { $txtCheckUser.Text = $p } })
+$Script:SelectedSharePath = ""
+$Script:SelectedShareName = ""
+$gridShares.Add_SelectionChanged({
+    if ($Script:LoadingShares) { return }
+    $sel = $gridShares.SelectedItem
+    if (-not $sel -or [string]::IsNullOrWhiteSpace($sel.Path)) { return }
+    $path = $sel.Path
+    $Script:SelectedSharePath = $path
+    $Script:SelectedShareName = $sel.Name
+    Set-Status "Share: $($sel.Name)  ->  $path  |  Showing ACL. Enter user/group + Check NTFS for deep scan." 0
+    # Show share root ACL immediately in the bottom grid
+    if (-not (Test-Path $path -ErrorAction SilentlyContinue)) {
+        $gridPerms.ItemsSource = [object[]]@([PSCustomObject]@{ShareName=$sel.Name;FolderPath=$path;Principal="(path not accessible)";AccessType="--";Rights="--";Inherited="--";Source="Share root"})
+        return
+    }
+    try {
+        $acl = Get-Acl -Path $path -ErrorAction Stop
+        $rows = @($acl.Access | ForEach-Object {
+            [PSCustomObject]@{
+                ShareName  = $sel.Name
+                FolderPath = $path
+                Principal  = $_.IdentityReference.Value
+                AccessType = $_.AccessControlType
+                Rights     = $_.FileSystemRights
+                Inherited  = $_.IsInherited
+                Source     = "Share root ACL"
+            }
+        })
+        if ($rows.Count -eq 0) { $rows = @([PSCustomObject]@{ShareName=$sel.Name;FolderPath=$path;Principal="(no ACEs)";AccessType="--";Rights="--";Inherited="--";Source="Share root"}) }
+        $gridPerms.ItemsSource = [object[]]@($rows)
+        $Script:CachedPermsCheck = $rows
+        Set-Status "Share: $($sel.Name) - $($rows.Count) ACEs on root. Enter user/group + Check NTFS for deep scan." 100
+    } catch {
+        $gridPerms.ItemsSource = [object[]]@([PSCustomObject]@{ShareName=$sel.Name;FolderPath=$path;Principal="Error: $($_.Exception.Message)";AccessType="--";Rights="--";Inherited="--";Source="Share root"})
+    }
+})
+$btnPickUsers.Add_Click({
+    $picks = Show-ADPickerDialog -Title "Pick User(s) from AD" -Mode "Users"
+    if ($picks -and $picks.Count -gt 0) { $txtCheckUser.Text = $picks -join ";" }
+})
+$btnPickGroups.Add_Click({
+    $picks = Show-ADPickerDialog -Title "Pick Group(s) from AD" -Mode "Groups"
+    if ($picks -and $picks.Count -gt 0) { $txtCheckUser.Text = $picks -join ";" }
+})
 $btnBrowseFolder.Add_Click({
     $depth = 2
     if ($null -ne $txtScanDepth) { [int]::TryParse($txtScanDepth.Text.Trim(), [ref]$depth) | Out-Null }
     Scan-FolderPermissions -Identity $txtCheckUser.Text.Trim() -ScanDepth $depth
 })
 $btnCheckPerms.Add_Click({
+    # Safety reset UI state before each scan
+    $btnStopScan.Visibility  = [System.Windows.Visibility]::Collapsed
+    $btnStopScan.IsEnabled   = $true
+    $btnCheckPerms.IsEnabled = $true
+    $Script:ScanCancelFlag   = $false
+    if ($Script:ScanCancel) { $Script:ScanCancel.Value = $false }
     $depth = 2
     if ($null -ne $txtScanDepth) { [int]::TryParse($txtScanDepth.Text.Trim(), [ref]$depth) | Out-Null }
-    $skipSys   = ($chkSkipSystemFolders.IsChecked -eq $true)
-    $skipAdmin = ($chkSkipAdminShares.IsChecked   -eq $true)
-    $limitRes  = ($chkLimitResults.IsChecked      -eq $true)
-    Check-UserSharePermissions -Identity $txtCheckUser.Text.Trim() -ScanDepth $depth `
-        -SkipSystemFolders $skipSys -SkipAdminShares $skipAdmin -LimitResults $limitRes
+    $identity = $txtCheckUser.Text.Trim()
+    if ([string]::IsNullOrWhiteSpace($identity)) { Show-Info "Enter a username or group name first."; return }
+    # If a share is selected in the top grid, scan only that path
+    if (-not [string]::IsNullOrWhiteSpace($Script:SelectedSharePath)) {
+        $skipSys = ($chkSkipSystemFolders.IsChecked -eq $true)
+        Write-OutputCmd "Get-NTFSPermissionsRecursive -Path '$($Script:SelectedSharePath)' -Identity '$identity' -Depth $depth"
+        Set-Status "Scanning '$($Script:SelectedSharePath)' for '$identity'..." 5
+        $results = Get-NTFSPermissionsRecursive -Path $Script:SelectedSharePath -Identity $identity -ShareName $gridShares.SelectedItem.Name -MaxDepth $depth
+        if ($results.Count -eq 0) {
+            $results = @([PSCustomObject]@{ShareName=$gridShares.SelectedItem.Name;FolderPath=$Script:SelectedSharePath;Principal=$identity;AccessType="No explicit permissions found";Rights="--";Inherited="--";Source="--"})
+        }
+        $Script:CachedPermsCheck = $results
+        $gridPerms.ItemsSource = [object[]]@($results)
+        Set-Status "Done. $($results.Count) entries found in selected share." 100
+    } else {
+        $skipSys   = ($chkSkipSystemFolders.IsChecked -eq $true)
+        $skipAdmin = ($chkSkipAdminShares.IsChecked   -eq $true)
+        $limitRes  = ($chkLimitResults.IsChecked      -eq $true)
+        Check-UserSharePermissions -Identity $identity -ScanDepth $depth `
+            -SkipSystemFolders $skipSys -SkipAdminShares $skipAdmin -LimitResults $limitRes
+    }
 })
 $btnStopScan.Add_Click({
     $Script:ScanCancelFlag = $true
+    $Script:ScanCancel.Value = $true
+    try{"stop"|Set-Content "$env:TEMP\ADMgr_StopScan.tmp" -EA SilentlyContinue}catch{}
     $btnStopScan.IsEnabled = $false
     Set-Status "Διακοπή scan... περιμένετε να ολοκληρωθεί το τρέχον share." 0
 })
@@ -3082,10 +3244,10 @@ function Show-UserAuthAudit {
     $username = $sel.Username
     if (-not $username) { Show-Info "Could not determine username."; return }
 
-    [xml]$auditXaml = @"
+    [xml]$auditXaml = [xml]([string]@'
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Auth Audit - $username" Width="1100" Height="640" MinWidth="700" MinHeight="440"
+        Title="Auth Audit" Width="1100" Height="640" MinWidth="700" MinHeight="440"
         WindowStartupLocation="CenterOwner" ResizeMode="CanResize" Background="#F8F9FA">
   <Grid Margin="12">
     <Grid.RowDefinitions>
@@ -3129,10 +3291,11 @@ function Show-UserAuthAudit {
     </StackPanel>
   </Grid>
 </Window>
-"@
+'@)
     $auditR = [System.Xml.XmlNodeReader]::new($auditXaml)
     $auditW = [Windows.Markup.XamlReader]::Load($auditR)
     $auditW.Owner = $Window
+    $auditW.Title = "Auth Audit - $username"
 
     $aGrid  = $auditW.FindName("gridAuditDlg")
     $aDays  = $auditW.FindName("txtAuditDays")
@@ -3367,7 +3530,8 @@ function Show-GroupDetails {
         $info += "Scope       : $($g.GroupScope)`n"
         $info += "Description : $($g.Description)`n"
         $info += "Email       : $($g.mail)`n"
-        $info += "ManagedBy   : $(if($g.ManagedBy){($g.ManagedBy -split ',')[0] -replace '^CN=',''}else{''})`n"
+        $mgr = if($g.ManagedBy){($g.ManagedBy -split ',')[0] -replace '^CN=',''}else{''}
+        $info += "ManagedBy   : $mgr`n"
         $info += "Created     : $($g.WhenCreated)`n"
         $info += "Modified    : $($g.WhenChanged)`n"
         $info += "Members     : $($members.Count)`n"
@@ -3550,11 +3714,15 @@ $menuModules.Add_Click({
     $gpOK = Get-Command Get-GPO            -ErrorAction SilentlyContinue
     $dnOK = Get-Command Get-DnsServerZone  -ErrorAction SilentlyContinue
     $dhOK = Get-Command Get-DhcpServerv4Scope -ErrorAction SilentlyContinue
+    $adStr = if($adOK){'AVAILABLE'}else{'NOT FOUND (RSAT required)'}
+    $gpStr = if($gpOK){'AVAILABLE'}else{'NOT FOUND (RSAT required)'}
+    $dnStr = if($dnOK){'AVAILABLE'}else{'not found (optional)'}
+    $dhStr = if($dhOK){'AVAILABLE'}else{'not found (optional)'}
     $msg  = "Module Status:`n"
-    $msg += "  ActiveDirectory : $(if($adOK){'AVAILABLE'}else{'NOT FOUND (RSAT required)'})`n"
-    $msg += "  GroupPolicy     : $(if($gpOK){'AVAILABLE'}else{'NOT FOUND (RSAT required)'})`n"
-    $msg += "  DnsServer       : $(if($dnOK){'AVAILABLE'}else{'not found (optional)'})`n"
-    $msg += "  DhcpServer      : $(if($dhOK){'AVAILABLE'}else{'not found (optional)'})"
+    $msg += "  ActiveDirectory : $adStr`n"
+    $msg += "  GroupPolicy     : $gpStr`n"
+    $msg += "  DnsServer       : $dnStr`n"
+    $msg += "  DhcpServer      : $dhStr"
     Show-Info $msg
 })
 $menuAbout.Add_Click({
@@ -4000,7 +4168,8 @@ function Show-UserDetails {
         $lblTitle.Text = "User Details: $($u.SamAccountName)  ($($u.DisplayName))"
 
         # Build info text
-        $dr = try { (Get-ADUser -Filter "Manager -eq '$($u.DistinguishedName)'" -EA Stop | Measure-Object).Count } catch { 0 }
+        $uDN = $u.DistinguishedName
+        $dr = try { (Get-ADUser -Filter "Manager -eq '$uDN'" -EA Stop | Measure-Object).Count } catch { 0 }
         $info  = "Username    : $($u.SamAccountName)`n"
         $info += "Display     : $($u.DisplayName)`n"
         $info += "Email       : $($u.mail)`n"
@@ -4009,7 +4178,8 @@ function Show-UserDetails {
         $info += "Office      : $($u.Office)`n"
         $info += "Phone       : $($u.telephoneNumber)`n"
         $info += "Mobile      : $($u.mobile)`n"
-        $info += "Manager     : $(if($u.Manager){($u.Manager -split ',')[0] -replace '^CN=',''}else{''})`n"
+        $mgr2 = if($u.Manager){($u.Manager -split ',')[0] -replace '^CN=',''}else{''}
+        $info += "Manager     : $mgr2`n"
         $info += "Direct Rep. : $dr`n"
         $info += "Description : $($u.Description)`n"
         $info += "OU          : $($u.DistinguishedName -replace '^CN=[^,]+,','')`n"
@@ -4449,9 +4619,17 @@ function Start-NetScan {
 
     # Convert to plain hashtables - safe across runspace boundaries
     $__comps = @($selectedComps | ForEach-Object {
-        @{ Name=[string]$_.Name; DNS=if($_.DNSHostName){[string]$_.DNSHostName}else{[string]$_.Name}
+        $ipv4 = if($_.IPv4Address){[string]$_.IPv4Address}else{''}
+        $dns  = if($_.DNSHostName){[string]$_.DNSHostName}else{[string]$_.Name}
+        # Try DNS resolve for IPv6
+        $ipv6 = ''
+        try {
+            $addrs = [System.Net.Dns]::GetHostAddresses($dns) | Where-Object { $_.AddressFamily -eq 'InterNetworkV6' -and $_.ToString() -ne '::1' }
+            if ($addrs) { $ipv6 = ($addrs | Select-Object -First 1).ToString() }
+        } catch {}
+        @{ Name=[string]$_.Name; DNS=$dns
            OS=if($_.OperatingSystem){[string]$_.OperatingSystem}else{''}
-           LL=$_.LastLogonDate; IP=if($_.IPv4Address){[string]$_.IPv4Address}else{''} }
+           LL=$_.LastLogonDate; IP=$ipv4; IPv6=$ipv6 }
     })
 
     $__grid=$gridNetStatus;$__lbl=$lblNetProgress;$__cnt=$lblNetCount
@@ -4468,11 +4646,22 @@ param($comp,$timeout,$retries,$useWMI,$usePSR,$useRemReg,$discMethod)
 function ping1 { param($t,$ms,$r) for($i=0;$i -le $r;$i++){try{$x=(New-Object System.Net.NetworkInformation.Ping).Send($t,$ms);if($x.Status -eq 'Success'){return $x}}catch{}};return $null }
 function tcpport { param($t,$port,$ms) try{$tc=New-Object System.Net.Sockets.TcpClient;$ar=$tc.BeginConnect($t,$port,$null,$null);$ok=$ar.AsyncWaitHandle.WaitOne($ms,$false);$tc.Close();return $ok}catch{return $false} }
 $nm=$comp.Name;$dn=$comp.DNS
-$reply=$null;$online=$false;$ip=$comp.IP;$rtt=''
+$reply=$null;$online=$false;$ip=$comp.IP;$ipv6=$comp.IPv6;$rtt=''
 $tryPing=($discMethod -eq 'Ping' -or $discMethod -eq 'Multi')
 if($tryPing){
     $reply=ping1 $dn $timeout $retries;if(-not $reply){$reply=ping1 $nm $timeout $retries}
-    if($reply){$online=$true;$ip=$reply.Address.ToString();$rtt="$($reply.RoundtripTime) ms"}
+    if($reply){
+    $online=$true
+    $resolvedAddr = $reply.Address.ToString()
+    if($resolvedAddr -eq '::1' -or $resolvedAddr -match '^fe80'){
+        # Ping returned IPv6 loopback/link-local - use AD IPv4 if available
+        if($comp.IP){ $ip=$comp.IP }else{ $ip='' }
+        if(-not $ipv6 -and $resolvedAddr -ne '::1'){ $ipv6=$resolvedAddr }
+    } else {
+        $ip=$resolvedAddr
+    }
+    $rtt="$($reply.RoundtripTime) ms"
+}
 }
 if(-not $online -and $discMethod -ne 'Ping'){
     $ports=switch($discMethod){'TCP445'{@(445)}'TCP88'{@(88)}'TCP389'{@(389)}'TCP3389'{@(3389)}'Multi'{@(445,88,389,3389)}default{@(445)}}
