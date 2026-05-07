@@ -17,13 +17,13 @@
 | | | |
 |---|---|---|
 | **System** | **Domain** | **Users** |
-| [![System](Screenshots/AD_Manager_System.png)](Screenshots/AD_Manager_System.png) | [![Domain](Screenshots/AD_Manager_Domain.png)](Screenshots/AD_Manager_Domain.png) | [![Users](Screenshots/AD_Manager_Users.png)](Screenshots/AD_Manager_Users.png) |
+| ![System](https://raw.githubusercontent.com/karanikn/AD_Manager/main/Screenshots/AD_Manager_System.png) | ![Domain](https://raw.githubusercontent.com/karanikn/AD_Manager/main/Screenshots/AD_Manager_Domain.png) | ![Users](https://raw.githubusercontent.com/karanikn/AD_Manager/main/Screenshots/AD_Manager_Users.png) |
 | *Local machine info — OS, CPU, RAM, disks, network, services, processes* | *Domain overview — forest info, FSMO roles, DCs, Last Logon Heatmap* | *User management — live filter, enable/disable, reset, export* |
 | **Auth Audit** | **Heatmap** | **Groups** |
-| [![Auth Audit](Screenshots/AD_Manager_UsersAudit.png)](Screenshots/AD_Manager_UsersAudit.png) | [![Heatmap](Screenshots/AD_Manager_UsersHeatmap.png)](Screenshots/AD_Manager_UsersHeatmap.png) | [![Groups](Screenshots/AD_Manager_Groups.png)](Screenshots/AD_Manager_Groups.png) |
+| ![Auth Audit](https://raw.githubusercontent.com/karanikn/AD_Manager/main/Screenshots/AD_Manager_UsersAudit.png) | ![Heatmap](https://raw.githubusercontent.com/karanikn/AD_Manager/main/Screenshots/AD_Manager_UsersHeatmap.png) | ![Groups](https://raw.githubusercontent.com/karanikn/AD_Manager/main/Screenshots/AD_Manager_Groups.png) |
 | *Per-user authentication events from all DCs (4624, 4768, 4776, 4740...)* | *Last logon activity heatmap with inline user list on tile click* | *Group management with Group Details and member add/remove* |
 | **Shares** | **Net Status** | **Settings – Audit** |
-| [![Shares](Screenshots/AD_Manager_Shares.png)](Screenshots/AD_Manager_Shares.png) | [![Net Status](Screenshots/AD_Manager_NetStatus.png)](Screenshots/AD_Manager_NetStatus.png) | [![Settings – Audit](Screenshots/AD_Manager_Settings.png)](Screenshots/AD_Manager_Settings.png) |
+| ![Shares](https://raw.githubusercontent.com/karanikn/AD_Manager/main/Screenshots/AD_Manager_Shares.png) | ![Net Status](https://raw.githubusercontent.com/karanikn/AD_Manager/main/Screenshots/AD_Manager_NetStatus.png) | ![Settings – Audit](https://raw.githubusercontent.com/karanikn/AD_Manager/main/Screenshots/AD_Manager_Settings.png) |
 | *Share list with ACL display and NTFS permission scanner* | *Parallel network scanner with port checks, WMI/RemoteReg enrichment, IPv6* | *Audit Policies — Success/Failure per subcategory with auto-read from auditpol* |
 
 ---
